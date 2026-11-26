@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model AppSettings {
+  id                  Int      @id @default(1)
+  mode                String   @default("APPROVAL") // "APPROVAL" | "AUTOPILOT"
+  morningCronTime     String   @default("08:00")    // HH:mm WIB
+  autopilotCronTime   String   @default("21:00")    // HH:mm WIB
+  timezone            String   @default("Asia/Jakarta")
+  techPreferences     String   @default("[\"TypeScript\",\"Next.js\",\"Three.js\",\"Unity C#\",\"Python\",\"AI & Automation\"]")
+  notificationChannel String   @default("TELEGRAM") // "TELEGRAM" | "DISCORD" | "NONE"
+  updatedAt           DateTime @updatedAt
+}
+
+model Repository {
+  id               Int      @id @default(autoincrement())
+  githubId         Int      @unique
+  name             String   @unique
+  fullName         String
+  description      String?
+  language         String?
+  defaultBranch    String   @default("main")
+  isPrivate        Boolean  @default(false)
+  isProtected      Boolean  @default(false)
+  protectionReason String?
+  recentCommits    String?  // JSON array of last 5 commits
+  lastSyncedAt     DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model DailySuggestion {
+  id          Int       @id @default(autoincrement())
+  dateKey     String    // "YYYY-MM-DD" in Asia/Jakarta
+  type        String    // "CREATE_REPO" | "UPDATE_REPO"
+  targetRepo  String
+  visibility  String    @default("public") // "public" | "private"
+  title       String    // Conventional Commit / title
+  description String?   // Repo description for CREATE_REPO
+  reasoning   String
+  filesJson   String    // JSON array: [{ "path": "...", "content": "..." }]
+  status      String    @default("PENDING") // "PENDING" | "EXECUTED" | "SKIPPED" | "FAILED"
+  createdAt   DateTime  @default(now())
+  executedAt  DateTime?
+
+  @@index([dateKey])
+}
+
+model ActivityLog {
+  id            Int      @id @default(autoincrement())
+  dateKey       String   // "YYYY-MM-DD" in Asia/Jakarta
+  actionType    String   // "CREATE_REPO" | "UPDATE_REPO"
+  repoName      String
+  commitMessage String
+  commitSha     String?
+  commitUrl     String?
+  triggeredBy   String   // "MANUAL_APPROVAL" | "AUTOPILOT"
+  status        String   // "SUCCESS" | "FAILED"
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+
+  @@index([dateKey, status])
+}

@@ -1,0 +1,44 @@
+name: GitDaily AI Scheduler
+
+on:
+  schedule:
+    # 08:00 WIB (01:00 UTC) - Sync repos, generate 2 AI suggestions, send notification
+    - cron: "0 1 * * *"
+    # 21:00 WIB (14:00 UTC) - Auto-Pilot fallback if no push executed today
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Endpoint to trigger manually (daily or autopilot)"
+        required: true
+        default: "daily"
+        type: choice
+        options:
+          - daily
+          - autopilot
+
+jobs:
+  trigger-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine target endpoint
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "endpoint=${{ github.event.inputs.job }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 14 * * *" ]; then
+            echo "endpoint=autopilot" >> "$GITHUB_OUTPUT"
+          else
+            echo "endpoint=daily" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Call GitDaily AI Cron Endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          ENDPOINT="${{ steps.target.outputs.endpoint }}"
+          echo "Triggering ${APP_URL}/api/cron/${ENDPOINT}"
+          curl --fail-with-body -sS -X POST "${APP_URL}/api/cron/${ENDPOINT}" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json"
