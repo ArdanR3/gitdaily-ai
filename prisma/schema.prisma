@@ -67,3 +67,16 @@ model ActivityLog {
 
   @@index([dateKey, status])
 }
+
+model StudyMaterial {
+  id                Int      @id @default(autoincrement())
+  title             String
+  sourceType        String   @default("PDF") // "PDF" | "MARKDOWN" | "CODE" | "TEXT"
+  chunksJson        String   // JSON array of strings (2500-3500 chars each)
+  totalChunks       Int      @default(1)
+  currentChunkIndex Int      @default(0)
+  charCount         Int      @default(0)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

@@ -112,11 +112,43 @@ export async function generateDailySuggestions(dateKey: string = getTodayWibKey(
   const hasAllowedRepos = compactContext.length > 0;
   const username = getGitHubUsername();
 
+  // Fetch active StudyMaterial (rotate chunk so daily pushes progress through uploaded PDFs/notes)
+  const activeMaterials = await prisma.studyMaterial.findMany({
+    where: { isActive: true },
+    orderBy: { updatedAt: "asc" },
+    take: 3,
+  });
+
+  let studyContextBlock = "";
+  let selectedMaterialId: number | null = null;
+  let nextChunkIndex = 0;
+
+  if (activeMaterials.length > 0) {
+    const mat = activeMaterials[0];
+    try {
+      const chunks = JSON.parse(mat.chunksJson) as string[];
+      if (chunks.length > 0) {
+        const idx = mat.currentChunkIndex % chunks.length;
+        selectedMaterialId = mat.id;
+        nextChunkIndex = (idx + 1) % chunks.length;
+        studyContextBlock = `
+MATERI BELAJAR AKTIF ("${mat.title}" — bagian ${idx + 1}/${chunks.length}):
+"""
+${chunks[idx]}
+"""
+Instruksi Khusus Materi: Gunakan konsep, algoritma, atau pola dari MATERI BELAJAR AKTIF di atas untuk membuat minimal salah satu saran menjadi implementasi yang lebih mendalam, kompleks, dan bernilai tinggi (bukan template dasar), lengkap dengan unit test atau contoh penggunaan nyata.`;
+      }
+    } catch {
+      studyContextBlock = "";
+    }
+  }
+
   const prompt = `Kamu adalah asisten engineering untuk akun GitHub "${username}".
 Preferensi tech stack & domain: ${settings.techPreferences}.
 
 Daftar repository milik ${username} yang BOLEH di-update (ringkas):
 ${JSON.stringify(compactContext)}
+${studyContextBlock}
 
 Tugasmu: Hasilkan tepat 2 saran bernilai tinggi dalam JSON:
 1. Satu saran dengan type "CREATE_REPO": ide micro-project / utility / template baru yang relevan dengan preferensi di atas, dengan nama repo kebab-case yang belum ada di daftar, deskripsi singkat, dan 2-3 file awal berkualitas (termasuk README.md + kode fungsional).
@@ -200,6 +232,13 @@ Aturan WAJIB:
       },
     });
     saved.push(record);
+  }
+
+  if (selectedMaterialId !== null) {
+    await prisma.studyMaterial.update({
+      where: { id: selectedMaterialId },
+      data: { currentChunkIndex: nextChunkIndex },
+    });
   }
 
   return saved;

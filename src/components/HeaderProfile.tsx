@@ -12,6 +12,7 @@ import {
   Hourglass,
   ExternalLink,
   Loader2,
+  BookOpen,
 } from "lucide-react";
 
 export interface ProfileData {
@@ -140,6 +141,14 @@ export function HeaderProfile({
               {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               {generating ? "Generating..." : "Generate Suggestions"}
             </button>
+
+            <Link
+              href="/materials"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] transition hover:border-[#8b949e] hover:bg-[#30363d]"
+            >
+              <BookOpen className="h-3.5 w-3.5 text-[#a371f7]" />
+              Materials
+            </Link>
 
             <Link
               href="/settings"
