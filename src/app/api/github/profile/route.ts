@@ -27,11 +27,27 @@ function calculateStreak(dateKeys: string[]): number {
   return streak;
 }
 
+import { getGitHubUsername } from "@/lib/env";
+import type { GitHubProfileSummary } from "@/types";
+
 export async function GET() {
   try {
     const todayKey = getTodayWibKey();
-    const [profile, executedToday, settings, successLogs] = await Promise.all([
-      fetchGitHubProfile(),
+    const username = getGitHubUsername();
+
+    const [profileResult, executedToday, settings, successLogs] = await Promise.all([
+      fetchGitHubProfile().catch((err: unknown): { fallback: GitHubProfileSummary; error: string } => ({
+        fallback: {
+          username,
+          name: username,
+          avatarUrl: `https://github.com/${username}.png`,
+          profileUrl: `https://github.com/${username}`,
+          bio: null,
+          publicRepos: 0,
+          totalPrivateRepos: 0,
+        },
+        error: err instanceof Error ? err.message : "Gagal memuat profil GitHub.",
+      })),
       hasExecutedToday(todayKey),
       prisma.appSettings.upsert({
         where: { id: 1 },
@@ -46,6 +62,9 @@ export async function GET() {
       }),
     ]);
 
+    const profile = "fallback" in profileResult ? profileResult.fallback : profileResult;
+    const profileError = "error" in profileResult ? profileResult.error : null;
+
     const streak = calculateStreak(successLogs.map((l) => l.dateKey));
     const nextSchedule = getNextScheduleInfo(
       executedToday ? settings.morningCronTime : settings.mode === "AUTOPILOT" ? settings.autopilotCronTime : settings.morningCronTime
@@ -53,6 +72,7 @@ export async function GET() {
 
     return NextResponse.json({
       profile,
+      profileError,
       todayKey,
       statusToday: executedToday ? "DONE" : "PENDING",
       streak,
