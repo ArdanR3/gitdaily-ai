@@ -1,9 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import { Fira_Code, Fira_Sans } from "next/font/google";
 import "./globals.css";
+
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fira-code",
+  display: "swap",
+});
+
+const firaSans = Fira_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fira-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "GitDaily AI · ArdanR3",
-  description: "Asisten otomasi harian GitHub bertenaga Gemini AI untuk akun ArdanR3.",
+  description: "Developer automation dashboard untuk aktivitas harian GitHub akun ArdanR3.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -20,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d1117",
+  themeColor: "#020617",
   width: "device-width",
   initialScale: 1,
 };
@@ -31,8 +46,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="dark">
-      <body className="min-h-screen bg-[#0d1117] text-[#e6edf3] antialiased selection:bg-[#1f6feb]/40">
+    <html lang="id" className={`dark ${firaCode.variable} ${firaSans.variable}`}>
+      <body className="min-h-screen bg-[var(--color-background)] font-sans text-[var(--color-foreground)] antialiased selection:bg-emerald-500/30 selection:text-emerald-100">
         {children}
       </body>
     </html>

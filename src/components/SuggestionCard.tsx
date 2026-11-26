@@ -11,6 +11,7 @@ import {
   Rocket,
   Loader2,
   CheckCircle2,
+  Terminal,
 } from "lucide-react";
 import type { GeneratedFile } from "@/types";
 import type { SuggestionItem } from "./CodePreviewModal";
@@ -71,82 +72,116 @@ export function SuggestionCard({
   }
 
   return (
-    <div className="flex flex-col justify-between rounded-xl border border-[#30363d] bg-[#161b22] p-5 transition hover:border-[#484f58]">
-      <div>
-        {/* Badge Row */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <article
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border bg-[var(--color-card)] transition-colors duration-200 ${
+        isExecuted
+          ? "border-emerald-500/40"
+          : "border-[var(--color-border-subtle)] hover:border-[var(--color-border)]"
+      }`}
+    >
+      {/* Top Semantic Accent Strip */}
+      <div
+        aria-hidden="true"
+        className={`h-0.5 w-full ${
+          isExecuted
+            ? "bg-emerald-500"
+            : isCreate
+              ? "bg-gradient-to-r from-violet-500 via-fuchsia-500/70 to-transparent"
+              : "bg-gradient-to-r from-sky-500 via-cyan-400/70 to-transparent"
+        }`}
+      />
+
+      <div className="flex flex-1 flex-col p-5">
+        {/* Badge & Visibility Row */}
+        <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2">
           <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[11px] font-medium ${
               isCreate
-                ? "border border-[#a371f7]/40 bg-[#a371f7]/15 text-[#d2a8ff]"
-                : "border border-[#58a6ff]/40 bg-[#58a6ff]/15 text-[#79c0ff]"
+                ? "border-violet-500/35 bg-violet-500/10 text-violet-300"
+                : "border-sky-500/35 bg-sky-500/10 text-sky-300"
             }`}
           >
-            {isCreate ? <FolderPlus className="h-3.5 w-3.5" /> : <GitCommitHorizontal className="h-3.5 w-3.5" />}
-            {isCreate ? "Buat Repo Baru" : "Update Repo Lama"}
+            {isCreate ? (
+              <FolderPlus className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <GitCommitHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+            )}
+            {isCreate ? "CREATE_REPO" : "UPDATE_REPO"}
           </span>
 
           {isCreate && suggestion.status === "PENDING" && (
-            <div className="inline-flex rounded-lg border border-[#30363d] bg-[#0d1117] p-0.5 text-[11px]">
+            <div
+              role="group"
+              aria-label="Visibility repository baru"
+              className="inline-flex rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] p-0.5 text-[11px]"
+            >
               <button
                 type="button"
                 disabled={updatingVis}
+                aria-pressed={suggestion.visibility === "public"}
                 onClick={() => handleToggleVisibility("public")}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 transition ${
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 transition-colors duration-150 ${
                   suggestion.visibility === "public"
-                    ? "bg-[#21262d] font-medium text-[#f0f6fc]"
-                    : "text-[#8b949e] hover:text-[#c9d1d9]"
+                    ? "bg-[var(--color-secondary)] font-medium text-white"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <Globe className="h-3 w-3" />
+                <Globe className="h-3 w-3" aria-hidden="true" />
                 Public
               </button>
               <button
                 type="button"
                 disabled={updatingVis}
+                aria-pressed={suggestion.visibility === "private"}
                 onClick={() => handleToggleVisibility("private")}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-1 transition ${
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 transition-colors duration-150 ${
                   suggestion.visibility === "private"
-                    ? "bg-[#21262d] font-medium text-[#f0f6fc]"
-                    : "text-[#8b949e] hover:text-[#c9d1d9]"
+                    ? "bg-[var(--color-secondary)] font-medium text-white"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                <Lock className="h-3 w-3" />
+                <Lock className="h-3 w-3" aria-hidden="true" />
                 Private
               </button>
             </div>
           )}
 
           {isExecuted && (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-[#3fb950]">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Dieksekusi
+            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] font-medium text-emerald-300">
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+              EXECUTED
             </span>
           )}
         </div>
 
-        {/* Target Repo & Commit Title */}
-        <h3 className="font-mono text-base font-semibold text-[#f0f6fc]">{suggestion.targetRepo}</h3>
-        <p className="mt-1 rounded-md border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 font-mono text-xs text-[#79c0ff]">
-          {suggestion.title}
-        </p>
+        {/* Target Repository */}
+        <h3 className="truncate font-mono text-base font-semibold tracking-tight text-[var(--color-foreground)]">
+          {suggestion.targetRepo}
+        </h3>
 
-        {/* Reasoning */}
-        <p className="mt-3 text-xs leading-relaxed text-[#8b949e]">{suggestion.reasoning}</p>
+        {/* Terminal Commit Message Strip */}
+        <div className="mt-2 flex items-start gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-3 py-2 font-mono text-xs text-emerald-300">
+          <Terminal className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden="true" />
+          <span className="break-words leading-relaxed">{suggestion.title}</span>
+        </div>
 
-        {/* Files List */}
+        {/* AI Reasoning */}
+        <p className="mt-3 text-sm leading-relaxed text-slate-300">{suggestion.reasoning}</p>
+
+        {/* File Manifest */}
         <div className="mt-4">
-          <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-[#6e7681]">
-            File ({files.length})
+          <div className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-slate-400">
+            <span>Changed Files</span>
+            <span className="font-mono text-slate-300">{files.length} file</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {files.map((f) => (
               <span
                 key={f.path}
-                className="inline-flex items-center gap-1 rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-0.5 font-mono text-[11px] text-[#c9d1d9]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-2 py-1 font-mono text-[11px] text-slate-200"
               >
-                <FileCode2 className="h-3 w-3 text-[#8b949e]" />
-                {f.path}
+                <FileCode2 className="h-3 w-3 shrink-0 text-sky-400" aria-hidden="true" />
+                <span className="truncate">{f.path}</span>
               </span>
             ))}
           </div>
@@ -154,13 +189,13 @@ export function SuggestionCard({
       </div>
 
       {/* Action Footer */}
-      <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-[#30363d] pt-4">
+      <div className="flex flex-col gap-2 border-t border-[var(--color-border-subtle)] bg-[#0A0E1C] px-5 py-3.5 sm:flex-row">
         <button
           type="button"
           onClick={() => onPreview(suggestion)}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] transition hover:border-[#8b949e] hover:bg-[#30363d]"
+          className="inline-flex min-h-[40px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] px-3.5 py-2 text-xs font-medium text-slate-100 transition-colors duration-200 hover:border-slate-500 hover:bg-[var(--color-secondary)]"
         >
-          <Code2 className="h-3.5 w-3.5" />
+          <Code2 className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
           Preview & Edit Code
         </button>
 
@@ -168,12 +203,16 @@ export function SuggestionCard({
           type="button"
           disabled={!canExecute}
           onClick={handleApproveClick}
-          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#238636] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-45"
+          className="inline-flex min-h-[40px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-slate-950 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-400"
         >
-          {executing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+          {executing ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Rocket className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
           {executing ? "Pushing..." : isExecuted ? "Sudah Push" : "Approve & Push"}
         </button>
       </div>
-    </div>
+    </article>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, XCircle, ExternalLink, Bot, UserCheck } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, Bot, UserCheck, Activity, GitCommitHorizontal } from "lucide-react";
 
 export interface ActivityLogItem {
   id: number;
@@ -22,65 +22,100 @@ interface ActivityTimelineProps {
 
 export function ActivityTimeline({ logs }: ActivityTimelineProps) {
   return (
-    <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-      <div className="mb-4">
-        <h2 className="text-sm font-semibold text-[#f0f6fc]">Activity Log</h2>
-        <p className="text-xs text-[#8b949e]">Riwayat eksekusi harian ke akun GitHub @ArdanR3.</p>
+    <section
+      aria-labelledby="activity-log-heading"
+      className="flex flex-col rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-5"
+    >
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-sky-400" aria-hidden="true" />
+            <h2 id="activity-log-heading" className="font-mono text-sm font-semibold text-[var(--color-foreground)]">
+              Activity Log
+            </h2>
+          </div>
+          <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+            Riwayat eksekusi harian yang dikirim ke akun GitHub @ArdanR3.
+          </p>
+        </div>
+
+        <span className="shrink-0 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-2 py-0.5 font-mono text-[11px] text-slate-300">
+          {logs.length} log
+        </span>
       </div>
 
       {logs.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-[#30363d] py-8 text-center text-xs text-[#8b949e]">
-          Belum ada riwayat push. Approve saran pertama kamu di atas!
+        <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-background)]/50 px-4 py-10 text-center">
+          <GitCommitHorizontal className="mb-2 h-6 w-6 text-slate-500" aria-hidden="true" />
+          <p className="text-xs font-medium text-slate-300">Belum ada riwayat push</p>
+          <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
+            Approve saran harian pertama kamu untuk mulai mencatat streak.
+          </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <ol className="relative max-h-[420px] space-y-3 overflow-y-auto pl-5 before:absolute before:bottom-2 before:left-[7px] before:top-2 before:w-px before:bg-[var(--color-border-subtle)]">
           {logs.map((log) => {
             const isSuccess = log.status === "SUCCESS";
+            const isAutopilot = log.triggeredBy === "AUTOPILOT";
+
             return (
-              <div
-                key={log.id}
-                className="flex flex-col gap-2 rounded-lg border border-[#30363d] bg-[#0d1117] p-3.5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {isSuccess ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-[#3fb950]" />
-                    ) : (
-                      <XCircle className="h-4 w-4 shrink-0 text-[#f85149]" />
-                    )}
-                    <span className="font-mono text-xs font-semibold text-[#f0f6fc]">{log.repoName}</span>
-                    <span className="rounded bg-[#21262d] px-1.5 py-0.5 font-mono text-[10px] text-[#8b949e]">
-                      {log.dateKey}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded bg-[#21262d] px-1.5 py-0.5 text-[10px] text-[#c9d1d9]">
-                      {log.triggeredBy === "AUTOPILOT" ? (
-                        <Bot className="h-3 w-3 text-[#d2a8ff]" />
+              <li key={log.id} className="relative">
+                {/* Timeline Status Node */}
+                <span
+                  aria-hidden="true"
+                  className={`absolute -left-5 top-4 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-[var(--color-card)] ${
+                    isSuccess ? "bg-emerald-400" : "bg-red-400"
+                  }`}
+                />
+
+                <div className="flex flex-col gap-2.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] p-3.5 transition-colors duration-150 hover:border-[var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isSuccess ? (
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Berhasil" />
                       ) : (
-                        <UserCheck className="h-3 w-3 text-[#58a6ff]" />
+                        <XCircle className="h-4 w-4 shrink-0 text-red-400" aria-label="Gagal" />
                       )}
-                      {log.triggeredBy === "AUTOPILOT" ? "Auto-Pilot" : "Manual"}
-                    </span>
+                      <span className="truncate font-mono text-xs font-semibold text-slate-100">{log.repoName}</span>
+                      <span className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-muted)] px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
+                        {log.dateKey}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${
+                          isAutopilot
+                            ? "border-violet-500/30 bg-violet-500/10 text-violet-300"
+                            : "border-sky-500/30 bg-sky-500/10 text-sky-300"
+                        }`}
+                      >
+                        {isAutopilot ? (
+                          <Bot className="h-3 w-3" aria-hidden="true" />
+                        ) : (
+                          <UserCheck className="h-3 w-3" aria-hidden="true" />
+                        )}
+                        {isAutopilot ? "Auto-Pilot" : "Manual"}
+                      </span>
+                    </div>
+
+                    <p className="truncate font-mono text-xs text-slate-300">{log.commitMessage}</p>
+                    {log.errorMessage && <p className="text-xs text-red-300">{log.errorMessage}</p>}
                   </div>
 
-                  <p className="truncate font-mono text-xs text-[#8b949e]">{log.commitMessage}</p>
-                  {log.errorMessage && <p className="text-xs text-[#ff7b72]">{log.errorMessage}</p>}
+                  {log.commitUrl && (
+                    <a
+                      href={log.commitUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-[34px] shrink-0 cursor-pointer items-center gap-1.5 self-start rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-card)] px-2.5 py-1.5 font-mono text-[11px] font-medium text-sky-400 transition-colors duration-200 hover:border-sky-500/60 hover:text-sky-300 sm:self-center"
+                    >
+                      <span>{log.commitSha ? log.commitSha.slice(0, 7) : "Commit"}</span>
+                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </a>
+                  )}
                 </div>
-
-                {log.commitUrl && (
-                  <a
-                    href={log.commitUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg border border-[#30363d] bg-[#161b22] px-2.5 py-1.5 font-mono text-[11px] text-[#58a6ff] transition hover:border-[#58a6ff] sm:self-center"
-                  >
-                    {log.commitSha ? log.commitSha.slice(0, 7) : "Lihat Commit"}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ol>
       )}
     </section>
   );

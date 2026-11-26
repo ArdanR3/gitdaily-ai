@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import {
-  Flame,
-  Clock,
   RefreshCw,
   Sparkles,
   Settings,
   LogOut,
-  CheckCircle2,
-  Hourglass,
   ExternalLink,
   Loader2,
   BookOpen,
+  Terminal,
 } from "lucide-react";
 
 export interface ProfileData {
@@ -54,120 +51,130 @@ export function HeaderProfile({
   onLogout,
 }: HeaderProfileProps) {
   const isDone = data?.statusToday === "DONE";
+  const username = data?.profile.username || "ArdanR3";
 
   return (
-    <header className="border-b border-[#30363d] bg-[#161b22]/90 backdrop-blur">
-      <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          {/* Identity & Status */}
-          <div className="flex items-center gap-3.5">
-            {data?.profile.avatarUrl ? (
-              <img
-                src={data.profile.avatarUrl}
-                alt={data.profile.username}
-                className="h-12 w-12 rounded-full border border-[#30363d] object-cover"
+    <header className="sticky top-0 z-30 border-b border-[var(--color-border-subtle)] bg-[#020617]/85 backdrop-blur-md">
+      <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6">
+        <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
+          {/* Brand + Operator Identity */}
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="relative shrink-0">
+              {data?.profile.avatarUrl ? (
+                <img
+                  src={data.profile.avatarUrl}
+                  alt={`Avatar ${username}`}
+                  className="h-11 w-11 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] object-cover"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] font-mono text-sm font-bold text-emerald-400"
+                >
+                  AR
+                </div>
+              )}
+              <span
+                title={data ? (isDone ? "Target harian selesai" : "Menunggu eksekusi hari ini") : "Memuat status"}
+                className={`absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-[#020617] ${
+                  !data ? "bg-slate-500" : isDone ? "bg-emerald-400" : "bg-amber-400"
+                }`}
               />
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#30363d] bg-[#0d1117] text-sm font-bold text-[#58a6ff]">
-                AR
-              </div>
-            )}
+            </div>
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg font-semibold text-[#f0f6fc]">GitDaily AI</h1>
+                <div className="inline-flex items-center gap-1.5">
+                  <Terminal className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                  <h1 className="font-mono text-base font-bold tracking-tight text-[var(--color-foreground)] sm:text-lg">
+                    GitDaily AI
+                  </h1>
+                </div>
+
                 <a
-                  href={data?.profile.profileUrl || "https://github.com/ArdanR3"}
+                  href={data?.profile.profileUrl || `https://github.com/${username}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-[#30363d] bg-[#0d1117] px-2.5 py-0.5 text-xs font-medium text-[#58a6ff] transition hover:border-[#58a6ff]"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-card)] px-2 py-0.5 font-mono text-xs font-medium text-sky-400 transition-colors duration-200 hover:border-sky-500/60 hover:text-sky-300"
                 >
-                  @{data?.profile.username || "ArdanR3"}
-                  <ExternalLink className="h-3 w-3" />
+                  @{username}
+                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
                 </a>
+
                 {data && (
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      isDone
-                        ? "border border-[#238636]/50 bg-[#238636]/15 text-[#3fb950]"
-                        : "border border-[#d29922]/50 bg-[#d29922]/15 text-[#e3b341]"
-                    }`}
-                  >
-                    {isDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Hourglass className="h-3.5 w-3.5" />}
-                    {isDone ? "DONE" : "PENDING"}
+                  <span className="hidden rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-muted)] px-2 py-0.5 font-mono text-[11px] font-medium text-slate-300 sm:inline-flex">
+                    {data.todayKey} · WIB
                   </span>
                 )}
               </div>
 
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#8b949e]">
-                <span className="inline-flex items-center gap-1 text-[#f0883e]">
-                  <Flame className="h-3.5 w-3.5" />
-                  <strong className="text-[#f0f6fc]">{data?.streak ?? 0}</strong> hari streak
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-[#58a6ff]" />
-                  Jadwal berikutnya:{" "}
-                  <strong className="text-[#c9d1d9]">
-                    {data ? `${data.nextSchedule.targetTimeWib} (${data.nextSchedule.label})` : "—"}
-                  </strong>
-                </span>
-                {data && (
-                  <span className="rounded bg-[#21262d] px-1.5 py-0.5 font-mono text-[11px] text-[#c9d1d9]">
-                    MODE: {data.mode}
-                  </span>
-                )}
-              </div>
+              <p className="mt-0.5 truncate text-xs text-[var(--color-muted-foreground)]">
+                {data?.profile.bio
+                  ? data.profile.bio
+                  : "Automation console untuk commit harian, guard repository, dan review kode AI."}
+              </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Command Actions & Navigation */}
+          <nav aria-label="Navigasi utama dashboard" className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={onSync}
               disabled={syncing}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] transition hover:border-[#8b949e] hover:bg-[#30363d] disabled:opacity-50"
+              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs font-medium text-slate-200 transition-colors duration-200 hover:border-slate-500 hover:bg-[var(--color-secondary)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              Sync Repos
+              {syncing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" aria-hidden="true" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+              )}
+              <span>{syncing ? "Syncing..." : "Sync Repos"}</span>
             </button>
 
             <button
               type="button"
               onClick={onGenerate}
               disabled={generating}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f6feb] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#388bfd] disabled:opacity-50"
+              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-slate-950 shadow-sm shadow-emerald-950/50 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              {generating ? "Generating..." : "Generate Suggestions"}
+              {generating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              <span>{generating ? "Generating..." : "Generate Suggestions"}</span>
             </button>
+
+            <div className="hidden h-5 w-px bg-[var(--color-border-subtle)] sm:block" aria-hidden="true" />
 
             <Link
               href="/materials"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] transition hover:border-[#8b949e] hover:bg-[#30363d]"
+              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-card)] px-3 py-2 text-xs font-medium text-slate-300 transition-colors duration-200 hover:border-[var(--color-border)] hover:bg-[var(--color-muted)] hover:text-white"
             >
-              <BookOpen className="h-3.5 w-3.5 text-[#a371f7]" />
-              Materials
+              <BookOpen className="h-3.5 w-3.5 text-violet-400" aria-hidden="true" />
+              <span>Materials</span>
             </Link>
 
             <Link
               href="/settings"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] transition hover:border-[#8b949e] hover:bg-[#30363d]"
+              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-card)] px-3 py-2 text-xs font-medium text-slate-300 transition-colors duration-200 hover:border-[var(--color-border)] hover:bg-[var(--color-muted)] hover:text-white"
             >
-              <Settings className="h-3.5 w-3.5" />
-              Settings
+              <Settings className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+              <span>Settings</span>
             </Link>
 
             <button
               type="button"
               onClick={onLogout}
+              aria-label="Logout dari dashboard"
               title="Logout"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#0d1117] px-2.5 py-2 text-xs font-medium text-[#8b949e] transition hover:border-[#f85149]/60 hover:text-[#ff7b72]"
+              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border-subtle)] bg-transparent px-2.5 py-2 text-xs font-medium text-slate-400 transition-colors duration-200 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
             >
-              <LogOut className="h-3.5 w-3.5" />
+              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden sm:inline">Logout</span>
             </button>
-          </div>
+          </nav>
         </div>
       </div>
     </header>
