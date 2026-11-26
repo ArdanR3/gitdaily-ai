@@ -38,7 +38,7 @@ const SUGGESTION_SCHEMA = {
   required: ["suggestions"],
 };
 
-async function callGroqJson(prompt: string): Promise<string> {
+async function callGroqJson(prompt: string, temperature = 0.5): Promise<string> {
   const groqKey = process.env.GROQ_API_KEY?.trim();
   if (!groqKey) {
     throw new Error("GROQ_API_KEY belum diatur.");
@@ -53,12 +53,13 @@ async function callGroqJson(prompt: string): Promise<string> {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.6,
+      temperature,
+      max_tokens: 4096,
       messages: [
         {
           role: "system",
           content:
-            'You are a senior software engineer. Respond ONLY with raw valid JSON (no markdown fences, no commentary) matching {"suggestions": [{"type": "CREATE_REPO" | "UPDATE_REPO", "target_repo": string, "visibility": "public" | "private", "title": string, "description": string, "reasoning": string, "files": [{"path": string, "content": string}]}]}.',
+            'You are a senior software engineer. Respond ONLY with valid, complete, properly-escaped JSON (no markdown fences, no commentary). Keep each file concise (under 80 lines) so JSON is never truncated. Schema: {"suggestions": [{"type": "CREATE_REPO" | "UPDATE_REPO", "target_repo": string, "visibility": "public" | "private", "title": string, "description": string, "reasoning": string, "files": [{"path": string, "content": string}]}]}.',
         },
         { role: "user", content: prompt },
       ],
@@ -164,10 +165,32 @@ Aturan WAJIB:
 - Semua file harus berupa kode teks atau Markdown yang lengkap, bersih, dan langsung siap commit.
 - Tulis "reasoning" singkat dalam Bahasa Indonesia mengapa ini bagus untuk portofolio ${username}.`;
 
-  let rawText: string | undefined;
+  const extractAndParse = (raw: string): { suggestions: AISuggestionDraft[] } => {
+    const cleanedJson = raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    const firstBrace = cleanedJson.indexOf("{");
+    const lastBrace = cleanedJson.lastIndexOf("}");
+    const jsonPayload =
+      firstBrace !== -1 && lastBrace > firstBrace ? cleanedJson.slice(firstBrace, lastBrace + 1) : cleanedJson;
+    return JSON.parse(jsonPayload) as { suggestions: AISuggestionDraft[] };
+  };
+
+  let parsed: { suggestions: AISuggestionDraft[] };
 
   if (process.env.GROQ_API_KEY?.trim()) {
-    rawText = await callGroqJson(prompt);
+    const firstTry = await callGroqJson(prompt, 0.5);
+    try {
+      parsed = extractAndParse(firstTry);
+    } catch {
+      // Retry once with lower temperature if JSON was truncated or malformed
+      const retryRaw = await callGroqJson(
+        `${prompt}\n\nPENTING: Pastikan JSON valid 100%, semua newline di dalam string di-escape (\\n), dan tiap file ringkas (maksimal 60 baris).`,
+        0.2
+      );
+      parsed = extractAndParse(retryRaw);
+    }
   } else {
     const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
     const response = await ai.models.generateContent({
@@ -179,26 +202,14 @@ Aturan WAJIB:
         temperature: 0.7,
       },
     });
-    rawText = response.text;
+    if (!response.text) {
+      throw new Error("AI Engine mengembalikan respons kosong.");
+    }
+    parsed = extractAndParse(response.text);
   }
 
-  if (!rawText) {
-    throw new Error("AI Engine mengembalikan respons kosong.");
-  }
-
-  // Strip optional markdown code fences or leading/trailing prose before parsing
-  const cleanedJson = rawText
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-  const firstBrace = cleanedJson.indexOf("{");
-  const lastBrace = cleanedJson.lastIndexOf("}");
-  const jsonPayload =
-    firstBrace !== -1 && lastBrace > firstBrace ? cleanedJson.slice(firstBrace, lastBrace + 1) : cleanedJson;
-
-  const parsed = JSON.parse(jsonPayload) as { suggestions: AISuggestionDraft[] };
   if (!Array.isArray(parsed.suggestions) || parsed.suggestions.length === 0) {
-    throw new Error("Format JSON saran dari Gemini tidak valid.");
+    throw new Error("Format JSON saran dari AI tidak valid.");
   }
 
   // Mark old PENDING suggestions for today as SKIPPED before saving regenerated ones
