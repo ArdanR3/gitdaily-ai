@@ -38,6 +38,49 @@ const SUGGESTION_SCHEMA = {
   required: ["suggestions"],
 };
 
+async function callGroqJson(prompt: string): Promise<string> {
+  const groqKey = process.env.GROQ_API_KEY?.trim();
+  if (!groqKey) {
+    throw new Error("GROQ_API_KEY belum diatur.");
+  }
+
+  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${groqKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.6,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            'You are a senior software engineer. Always respond ONLY with valid JSON matching {"suggestions": [{"type": "CREATE_REPO" | "UPDATE_REPO", "target_repo": string, "visibility": "public" | "private", "title": string, "description": string, "reasoning": string, "files": [{"path": string, "content": string}]}]}.',
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq API error (${res.status}): ${errText}`);
+  }
+
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const text = data.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error("Groq API mengembalikan respons kosong.");
+  }
+  return text;
+}
+
 export async function generateDailySuggestions(dateKey: string = getTodayWibKey()) {
   const settings = await prisma.appSettings.upsert({
     where: { id: 1 },
@@ -90,20 +133,26 @@ Aturan WAJIB:
 - Semua file harus berupa kode teks atau Markdown yang lengkap, bersih, dan langsung siap commit.
 - Tulis "reasoning" singkat dalam Bahasa Indonesia mengapa ini bagus untuk portofolio ${username}.`;
 
-  const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-  const response = await ai.models.generateContent({
-    model: getGeminiModel(),
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: SUGGESTION_SCHEMA,
-      temperature: 0.7,
-    },
-  });
+  let rawText: string | undefined;
 
-  const rawText = response.text;
+  if (process.env.GROQ_API_KEY?.trim()) {
+    rawText = await callGroqJson(prompt);
+  } else {
+    const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+    const response = await ai.models.generateContent({
+      model: getGeminiModel(),
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: SUGGESTION_SCHEMA,
+        temperature: 0.7,
+      },
+    });
+    rawText = response.text;
+  }
+
   if (!rawText) {
-    throw new Error("Gemini API mengembalikan respons kosong.");
+    throw new Error("AI Engine mengembalikan respons kosong.");
   }
 
   const parsed = JSON.parse(rawText) as { suggestions: AISuggestionDraft[] };
