@@ -54,12 +54,11 @@ async function callGroqJson(prompt: string): Promise<string> {
     body: JSON.stringify({
       model,
       temperature: 0.6,
-      response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            'You are a senior software engineer. Always respond ONLY with valid JSON matching {"suggestions": [{"type": "CREATE_REPO" | "UPDATE_REPO", "target_repo": string, "visibility": "public" | "private", "title": string, "description": string, "reasoning": string, "files": [{"path": string, "content": string}]}]}.',
+            'You are a senior software engineer. Respond ONLY with raw valid JSON (no markdown fences, no commentary) matching {"suggestions": [{"type": "CREATE_REPO" | "UPDATE_REPO", "target_repo": string, "visibility": "public" | "private", "title": string, "description": string, "reasoning": string, "files": [{"path": string, "content": string}]}]}.',
         },
         { role: "user", content: prompt },
       ],
@@ -155,7 +154,17 @@ Aturan WAJIB:
     throw new Error("AI Engine mengembalikan respons kosong.");
   }
 
-  const parsed = JSON.parse(rawText) as { suggestions: AISuggestionDraft[] };
+  // Strip optional markdown code fences or leading/trailing prose before parsing
+  const cleanedJson = rawText
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const firstBrace = cleanedJson.indexOf("{");
+  const lastBrace = cleanedJson.lastIndexOf("}");
+  const jsonPayload =
+    firstBrace !== -1 && lastBrace > firstBrace ? cleanedJson.slice(firstBrace, lastBrace + 1) : cleanedJson;
+
+  const parsed = JSON.parse(jsonPayload) as { suggestions: AISuggestionDraft[] };
   if (!Array.isArray(parsed.suggestions) || parsed.suggestions.length === 0) {
     throw new Error("Format JSON saran dari Gemini tidak valid.");
   }
