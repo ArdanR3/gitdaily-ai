@@ -68,6 +68,17 @@ model ActivityLog {
   @@index([dateKey, status])
 }
 
+model DailyExecutionLock {
+  dateKey  String   @id // "YYYY-MM-DD" (Asia/Jakarta)
+  lockedAt DateTime @default(now())
+  source   String   // "MANUAL_APPROVAL" | "AUTOPILOT"
+}
+
+model DailyCronLock {
+  dateKey  String   @id // "YYYY-MM-DD" (Asia/Jakarta)
+  lockedAt DateTime @default(now())
+}
+
 model StudyMaterial {
   id                Int      @id @default(autoincrement())
   title             String

@@ -4,10 +4,19 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, ArrowRight, Loader2, GitBranch } from "lucide-react";
 
+function sanitizeNextPath(raw: string | null): string {
+  if (!raw) return "/";
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//") || trimmed.startsWith("/\\")) {
+    return "/";
+  }
+  return trimmed;
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") || "/";
+  const nextPath = sanitizeNextPath(searchParams.get("next"));
 
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

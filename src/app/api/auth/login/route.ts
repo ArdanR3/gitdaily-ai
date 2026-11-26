@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { createSessionToken, SESSION_COOKIE_NAME, verifyDashboardPassword } from "@/lib/auth";
 import { getDashboardPassword } from "@/lib/env";
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!body.password || body.password !== expected) {
+    if (!verifyDashboardPassword(body.password)) {
       return NextResponse.json({ error: "Password / PIN salah." }, { status: 401 });
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
     return response;

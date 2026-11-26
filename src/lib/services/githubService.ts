@@ -166,6 +166,14 @@ export async function pushFilesToExistingRepo(
   const owner = getGitHubUsername();
 
   try {
+    // Live privacy check before touching any existing repository
+    const { data: liveRepo } = await octokit.repos.get({ owner, repo });
+    if (liveRepo.private) {
+      throw new Error(
+        `Diblokir oleh Security Guard: repository "${repo}" saat ini berstatus Private di GitHub.`
+      );
+    }
+
     const { branch, headSha } = await resolveBranchRef(octokit, owner, repo, preferredBranch);
 
     const { data: baseCommit } = await octokit.git.getCommit({
@@ -249,6 +257,13 @@ export async function createRepositoryWithFiles(
     const branch = created.default_branch || "main";
     const pushResult = await pushFilesToExistingRepo(created.name, branch, commitMessage, validatedFiles);
 
+    const autoProtect = detectDefaultProtection(
+      created.name,
+      created.description ?? null,
+      null,
+      created.private
+    );
+
     await prisma.repository.upsert({
       where: { githubId: created.id },
       update: {
@@ -257,6 +272,9 @@ export async function createRepositoryWithFiles(
         description: created.description,
         defaultBranch: branch,
         isPrivate: created.private,
+        ...(autoProtect.isProtected
+          ? { isProtected: true, protectionReason: autoProtect.reason }
+          : {}),
         lastSyncedAt: new Date(),
       },
       create: {
@@ -267,7 +285,8 @@ export async function createRepositoryWithFiles(
         language: null,
         defaultBranch: branch,
         isPrivate: created.private,
-        isProtected: false,
+        isProtected: autoProtect.isProtected,
+        protectionReason: autoProtect.reason,
         recentCommits: JSON.stringify([
           { sha: pushResult.commitSha.slice(0, 7), message: commitMessage, date: new Date().toISOString() },
         ]),

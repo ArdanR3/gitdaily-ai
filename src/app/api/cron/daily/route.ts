@@ -6,17 +6,18 @@ import { generateDailySuggestions } from "@/lib/services/aiSuggestionService";
 import { sendDailySuggestionsNotification } from "@/lib/services/notificationService";
 import { getTodayWibKey } from "@/lib/time";
 
-async function handleDailyCron(request: Request) {
+export async function POST(request: Request) {
   if (!verifyCronAuthorization(request.headers.get("authorization"))) {
     return NextResponse.json({ error: "Forbidden: invalid CRON_SECRET." }, { status: 401 });
   }
 
-  try {
-    const dateKey = getTodayWibKey();
+  const dateKey = getTodayWibKey();
+  let lockAcquired = false;
 
-    // Idempotency check: skip Gemini API call if today's suggestions already exist
+  try {
+    // Idempotency check + atomic lock to prevent concurrent daily cron AI/chunk races
     const existingCount = await prisma.dailySuggestion.count({
-      where: { dateKey, status: { in: ["PENDING", "EXECUTED"] } },
+      where: { dateKey, status: { in: ["PENDING", "EXECUTING", "EXECUTED"] } },
     });
 
     if (existingCount > 0) {
@@ -24,6 +25,17 @@ async function handleDailyCron(request: Request) {
         ok: true,
         skipped: true,
         reason: `Saran untuk tanggal ${dateKey} (WIB) sudah tersedia (${existingCount} item).`,
+      });
+    }
+
+    try {
+      await prisma.dailyCronLock.create({ data: { dateKey } });
+      lockAcquired = true;
+    } catch {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        reason: `Cron daily untuk ${dateKey} (WIB) sudah berjalan atau selesai.`,
       });
     }
 
@@ -44,15 +56,10 @@ async function handleDailyCron(request: Request) {
       generatedSuggestions: suggestions.length,
     });
   } catch (error) {
+    if (lockAcquired) {
+      await prisma.dailyCronLock.deleteMany({ where: { dateKey } }).catch(() => {});
+    }
     const message = error instanceof Error ? error.message : "Cron daily gagal.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-export async function POST(request: Request) {
-  return handleDailyCron(request);
-}
-
-export async function GET(request: Request) {
-  return handleDailyCron(request);
 }

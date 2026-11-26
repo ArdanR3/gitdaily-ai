@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { verifyCronAuthorization } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasExecutedToday } from "@/lib/dailyGuard";
+import { syncRepositoriesFromGitHub } from "@/lib/services/githubService";
 import { generateDailySuggestions } from "@/lib/services/aiSuggestionService";
 import { executeSuggestionById } from "@/lib/services/executionService";
 import { getTodayWibKey } from "@/lib/time";
 
-async function handleAutopilotCron(request: Request) {
+export async function POST(request: Request) {
   if (!verifyCronAuthorization(request.headers.get("authorization"))) {
     return NextResponse.json({ error: "Forbidden: invalid CRON_SECRET." }, { status: 401 });
   }
@@ -35,6 +36,9 @@ async function handleAutopilotCron(request: Request) {
       });
     }
 
+    // Refresh repository visibility/protection state from GitHub before selecting an UPDATE_REPO target
+    await syncRepositoriesFromGitHub();
+
     let pending = await prisma.dailySuggestion.findMany({
       where: { dateKey, status: "PENDING" },
       orderBy: { id: "asc" },
@@ -44,7 +48,7 @@ async function handleAutopilotCron(request: Request) {
       pending = await generateDailySuggestions(dateKey);
     }
 
-    // Prefer safest UPDATE_REPO on an allowed repo; fallback to CREATE_REPO
+    // Prefer safest UPDATE_REPO on an allowed public repo; fallback to CREATE_REPO
     const allowedRepoNames = new Set(
       (await prisma.repository.findMany({ where: { isProtected: false, isPrivate: false }, select: { name: true } })).map(
         (r) => r.name
@@ -75,12 +79,4 @@ async function handleAutopilotCron(request: Request) {
     const message = error instanceof Error ? error.message : "Cron autopilot gagal.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
-}
-
-export async function POST(request: Request) {
-  return handleAutopilotCron(request);
-}
-
-export async function GET(request: Request) {
-  return handleAutopilotCron(request);
 }

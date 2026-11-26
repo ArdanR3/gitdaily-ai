@@ -11,6 +11,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       return NextResponse.json({ error: "ID saran tidak valid." }, { status: 400 });
     }
 
+    const existing = await prisma.dailySuggestion.findUnique({ where: { id: suggestionId } });
+    if (!existing) {
+      return NextResponse.json({ error: "Saran tidak ditemukan." }, { status: 404 });
+    }
+    if (existing.status !== "PENDING") {
+      return NextResponse.json({ error: "Hanya saran berstatus PENDING yang dapat diedit." }, { status: 409 });
+    }
+
     const body = (await request.json()) as {
       targetRepo?: string;
       visibility?: "public" | "private";

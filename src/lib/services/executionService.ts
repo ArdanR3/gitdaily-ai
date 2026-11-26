@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { hasExecutedToday, validateFilesForCommit } from "@/lib/dailyGuard";
+import { validateFilesForCommit } from "@/lib/dailyGuard";
 import { createRepositoryWithFiles, pushFilesToExistingRepo } from "@/lib/services/githubService";
 import { sendExecutionResultNotification } from "@/lib/services/notificationService";
 import { getTodayWibKey } from "@/lib/time";
@@ -8,33 +8,52 @@ import type { GeneratedFile, TriggerSource } from "@/types";
 export async function executeSuggestionById(suggestionId: number, triggeredBy: TriggerSource) {
   const todayKey = getTodayWibKey();
 
-  const alreadyDone = await hasExecutedToday(todayKey);
-  if (alreadyDone) {
-    throw new Error(`Batas harian tercapai: sudah ada eksekusi sukses untuk tanggal ${todayKey} (WIB).`);
-  }
+  // Atomically check daily limit, claim DailySuggestion (PENDING -> EXECUTING), and acquire DailyExecutionLock
+  const suggestion = await prisma.$transaction(async (tx) => {
+    const existingSuccess = await tx.activityLog.findFirst({
+      where: { dateKey: todayKey, status: "SUCCESS" },
+      select: { id: true },
+    });
+    if (existingSuccess) {
+      throw new Error(`Batas harian tercapai: sudah ada eksekusi sukses untuk tanggal ${todayKey} (WIB).`);
+    }
 
-  const suggestion = await prisma.dailySuggestion.findUnique({
-    where: { id: suggestionId },
+    const found = await tx.dailySuggestion.findUnique({ where: { id: suggestionId } });
+    if (!found) {
+      throw new Error("Saran tidak ditemukan.");
+    }
+    if (found.status !== "PENDING") {
+      throw new Error(`Saran ini tidak berstatus PENDING (status saat ini: ${found.status}).`);
+    }
+
+    const claimed = await tx.dailySuggestion.updateMany({
+      where: { id: suggestionId, status: "PENDING" },
+      data: { status: "EXECUTING" },
+    });
+    if (claimed.count !== 1) {
+      throw new Error("Saran sedang diproses atau sudah dieksekusi.");
+    }
+
+    try {
+      await tx.dailyExecutionLock.create({
+        data: { dateKey: todayKey, source: triggeredBy },
+      });
+    } catch {
+      throw new Error(`Eksekusi lain sedang berjalan atau sudah terkunci untuk tanggal ${todayKey} (WIB).`);
+    }
+
+    return found;
   });
 
-  if (!suggestion) {
-    throw new Error("Saran tidak ditemukan.");
-  }
-
-  if (suggestion.status === "EXECUTED") {
-    throw new Error("Saran ini sudah pernah dieksekusi.");
-  }
-
-  let files: GeneratedFile[] = [];
   try {
-    files = JSON.parse(suggestion.filesJson) as GeneratedFile[];
-  } catch {
-    throw new Error("Data file pada saran rusak (invalid JSON).");
-  }
+    let files: GeneratedFile[] = [];
+    try {
+      files = JSON.parse(suggestion.filesJson) as GeneratedFile[];
+    } catch {
+      throw new Error("Data file pada saran rusak (invalid JSON).");
+    }
 
-  const validatedFiles = validateFilesForCommit(files);
-
-  try {
+    const validatedFiles = validateFilesForCommit(files);
     let pushResult;
 
     if (suggestion.type === "CREATE_REPO") {
@@ -120,6 +139,11 @@ export async function executeSuggestionById(suggestionId: number, triggeredBy: T
     await prisma.dailySuggestion.update({
       where: { id: suggestion.id },
       data: { status: "FAILED" },
+    });
+
+    // Release today's execution lock on failure so the operator can retry with another suggestion
+    await prisma.dailyExecutionLock.deleteMany({
+      where: { dateKey: todayKey },
     });
 
     await prisma.activityLog.create({

@@ -53,7 +53,7 @@ export default function MaterialsPage() {
 
   async function extractPdfTextClientSide(file: File): Promise<string> {
     const pdfjs = await import("pdfjs-dist");
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
     const buffer = await file.arrayBuffer();
     const doc = await pdfjs.getDocument({ data: buffer }).promise;

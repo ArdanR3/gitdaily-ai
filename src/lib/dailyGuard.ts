@@ -43,15 +43,42 @@ const BLOCKED_BINARY_EXTENSIONS = new Set([
   ".db",
 ]);
 
+const BLOCKED_FILENAMES = new Set([
+  "package.json",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "bun.lockb",
+  ".npmrc",
+  ".yarnrc",
+  ".yarnrc.yml",
+  "dockerfile",
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  ".gitlab-ci.yml",
+  "makefile",
+]);
+
 export function validateFilesForCommit(files: GeneratedFile[]): GeneratedFile[] {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("Daftar file untuk commit tidak boleh kosong.");
   }
 
   return files.map((file) => {
-    const cleanPath = file.path.trim().replace(/^\/+/, "").replace(/\\/g, "/");
-    if (!cleanPath || cleanPath.includes("..") || cleanPath.startsWith(".git/")) {
-      throw new Error(`Path file tidak valid: "${file.path}"`);
+    const cleanPath = file.path.trim().replace(/\\/g, "/").replace(/^\/+/, "");
+    const segments = cleanPath.split("/");
+    const lowerPath = cleanPath.toLowerCase();
+    const baseName = (segments[segments.length - 1] || "").toLowerCase();
+
+    if (
+      !cleanPath ||
+      segments.some((seg) => !seg || seg === "." || seg === ".." || seg.toLowerCase() === ".git") ||
+      lowerPath.startsWith(".github/") ||
+      lowerPath.startsWith(".husky/") ||
+      baseName.startsWith(".env") ||
+      BLOCKED_FILENAMES.has(baseName)
+    ) {
+      throw new Error(`Path file berisiko atau tidak valid dilarang di-commit oleh AI: "${file.path}"`);
     }
 
     const dotIdx = cleanPath.lastIndexOf(".");

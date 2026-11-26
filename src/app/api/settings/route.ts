@@ -25,16 +25,23 @@ export async function PATCH(request: Request) {
       notificationChannel?: "TELEGRAM" | "DISCORD" | "NONE";
     };
 
+    const hhmmRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const data: Record<string, string> = {};
     if (body.mode === "APPROVAL" || body.mode === "AUTOPILOT") data.mode = body.mode;
-    if (body.morningCronTime && /^\d{2}:\d{2}$/.test(body.morningCronTime)) {
+    if (body.morningCronTime && hhmmRegex.test(body.morningCronTime)) {
       data.morningCronTime = body.morningCronTime;
     }
-    if (body.autopilotCronTime && /^\d{2}:\d{2}$/.test(body.autopilotCronTime)) {
+    if (body.autopilotCronTime && hhmmRegex.test(body.autopilotCronTime)) {
       data.autopilotCronTime = body.autopilotCronTime;
     }
     if (Array.isArray(body.techPreferences)) {
-      data.techPreferences = JSON.stringify(body.techPreferences.map((t) => t.trim()).filter(Boolean));
+      data.techPreferences = JSON.stringify(
+        body.techPreferences
+          .filter((t): t is string => typeof t === "string")
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .slice(0, 30)
+      );
     }
     if (
       body.notificationChannel === "TELEGRAM" ||
