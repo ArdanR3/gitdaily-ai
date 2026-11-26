@@ -44,7 +44,7 @@ async function callGroqJson(prompt: string): Promise<string> {
     throw new Error("GROQ_API_KEY belum diatur.");
   }
 
-  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const model = process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
