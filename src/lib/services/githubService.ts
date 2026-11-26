@@ -54,17 +54,23 @@ export async function syncRepositoriesFromGitHub() {
   const owner = getGitHubUsername();
 
   try {
-    const { data: repos } = await octokit.repos.listForAuthenticatedUser({
+    const repos = await octokit.paginate(octokit.repos.listForAuthenticatedUser, {
       affiliation: "owner",
       sort: "updated",
       direction: "desc",
-      per_page: 50,
+      per_page: 100,
     });
 
-    const synced = [];
-    for (let i = 0; i < repos.length; i++) {
-      const repo = repos[i];
-      if (repo.owner.login.toLowerCase() !== owner.toLowerCase()) continue;
+    const ownerRepos = repos.filter((repo) => repo.owner.login.toLowerCase() === owner.toLowerCase());
+    const liveGithubIds = ownerRepos.map((repo) => repo.id);
+
+    // Prune stale repositories that were deleted/transferred on GitHub
+    await prisma.repository.deleteMany({
+      where: liveGithubIds.length > 0 ? { githubId: { notIn: liveGithubIds } } : {},
+    });
+
+    for (let i = 0; i < ownerRepos.length; i++) {
+      const repo = ownerRepos[i];
 
       // Fetch last 5 commits only for the top 15 most recently updated repos to conserve API quota
       let recentCommits: CommitSummary[] = [];
@@ -97,7 +103,7 @@ export async function syncRepositoriesFromGitHub() {
         repo.private
       );
 
-      const record = await prisma.repository.upsert({
+      await prisma.repository.upsert({
         where: { githubId: repo.id },
         update: {
           name: repo.name,
@@ -129,10 +135,11 @@ export async function syncRepositoriesFromGitHub() {
           lastSyncedAt: new Date(),
         },
       });
-      synced.push(record);
     }
 
-    return synced;
+    return await prisma.repository.findMany({
+      orderBy: [{ isProtected: "asc" }, { lastSyncedAt: "desc" }],
+    });
   } catch (error) {
     throw new Error(formatGitHubError(error));
   }
