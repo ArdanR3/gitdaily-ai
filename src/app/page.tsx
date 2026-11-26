@@ -50,11 +50,23 @@ export default function DashboardPage() {
         return;
       }
 
-      if (profRes.ok) setProfileData((await profRes.json()) as ProfileData);
+      if (profRes.ok) {
+        const pData = (await profRes.json()) as ProfileData & { profileError?: string | null };
+        setProfileData(pData);
+        if (pData.profileError) {
+          showToast("error", `GitHub API warning: ${pData.profileError}`);
+        }
+      } else {
+        const errData = (await profRes.json().catch(() => ({}))) as { error?: string };
+        showToast("error", errData.error || `Gagal memuat profil (HTTP ${profRes.status}).`);
+      }
       if (suggRes.ok) {
         const sData = (await suggRes.json()) as { suggestions: SuggestionItem[]; executedToday: boolean };
         setSuggestions(sData.suggestions || []);
         setExecutedToday(Boolean(sData.executedToday));
+      } else if (suggRes.status !== 401) {
+        const errData = (await suggRes.json().catch(() => ({}))) as { error?: string };
+        showToast("error", errData.error || `Gagal memuat saran harian (HTTP ${suggRes.status}).`);
       }
       if (repoRes.ok) {
         const rData = (await repoRes.json()) as { repositories: RepoItem[] };

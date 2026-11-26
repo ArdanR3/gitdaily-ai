@@ -26,8 +26,31 @@ export function getAppUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000").replace(/\/+$/, "");
 }
 
+const DEFAULT_TIMEZONE = "Asia/Jakarta";
+
+function isValidTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function getTimezone(): string {
-  return process.env.TZ?.trim() || "Asia/Jakarta";
+  const explicit = process.env.APP_TIMEZONE?.trim().replace(/^["']|["']$/g, "");
+  if (explicit && isValidTimeZone(explicit)) {
+    return explicit;
+  }
+
+  // Vercel / AWS Lambda sets process.env.TZ=":UTC" by default, which throws
+  // RangeError in Intl.DateTimeFormat and overrides WIB if accepted blindly.
+  const rawTz = process.env.TZ?.trim().replace(/^["']|["']$/g, "");
+  if (!rawTz || rawTz.startsWith(":") || rawTz.toUpperCase() === "UTC" || rawTz.toUpperCase() === "ETC/UTC") {
+    return DEFAULT_TIMEZONE;
+  }
+
+  return isValidTimeZone(rawTz) ? rawTz : DEFAULT_TIMEZONE;
 }
 
 export function getCronSecret(): string {
