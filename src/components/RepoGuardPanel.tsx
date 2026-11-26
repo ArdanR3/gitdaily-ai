@@ -114,29 +114,36 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
                       </span>
                     )}
                   </div>
-                  {repo.isProtected && repo.protectionReason && (
-                    <p className="mt-0.5 truncate text-[11px] text-[#f0883e]">{repo.protectionReason}</p>
+                  {(repo.isProtected || repo.isPrivate) && (
+                    <p className="mt-0.5 truncate text-[11px] text-[#f0883e]">
+                      {repo.isPrivate
+                        ? "Dikunci permanen: repository Private tidak dapat disentuh AI"
+                        : repo.protectionReason}
+                    </p>
                   )}
                 </div>
 
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || repo.isPrivate}
+                  title={repo.isPrivate ? "Repository Private dikunci permanen" : undefined}
                   onClick={() => handleToggle(repo)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition disabled:opacity-50 ${
-                    repo.isProtected
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    repo.isProtected || repo.isPrivate
                       ? "border-[#f85149]/40 bg-[#f85149]/15 text-[#ff7b72] hover:bg-[#f85149]/25"
                       : "border-[#238636]/40 bg-[#238636]/15 text-[#3fb950] hover:bg-[#238636]/25"
                   }`}
                 >
                   {busy ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : repo.isPrivate ? (
+                    <Lock className="h-3.5 w-3.5" />
                   ) : repo.isProtected ? (
                     <ShieldAlert className="h-3.5 w-3.5" />
                   ) : (
                     <ShieldCheck className="h-3.5 w-3.5" />
                   )}
-                  {repo.isProtected ? "Protected" : "Allowed"}
+                  {repo.isPrivate ? "Locked (Private)" : repo.isProtected ? "Protected" : "Allowed"}
                 </button>
               </div>
             );

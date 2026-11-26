@@ -46,7 +46,9 @@ async function handleAutopilotCron(request: Request) {
 
     // Prefer safest UPDATE_REPO on an allowed repo; fallback to CREATE_REPO
     const allowedRepoNames = new Set(
-      (await prisma.repository.findMany({ where: { isProtected: false }, select: { name: true } })).map((r) => r.name)
+      (await prisma.repository.findMany({ where: { isProtected: false, isPrivate: false }, select: { name: true } })).map(
+        (r) => r.name
+      )
     );
 
     const chosen =

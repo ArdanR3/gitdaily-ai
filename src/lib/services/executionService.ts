@@ -53,6 +53,11 @@ export async function executeSuggestionById(suggestionId: number, triggeredBy: T
       if (!repoRecord) {
         throw new Error(`Repository "${suggestion.targetRepo}" belum tersinkronisasi di database.`);
       }
+      if (repoRecord.isPrivate) {
+        throw new Error(
+          `Diblokir oleh Security Guard: repository "${suggestion.targetRepo}" berstatus Private dan dikunci permanen.`
+        );
+      }
       if (repoRecord.isProtected) {
         throw new Error(
           `Repository "${suggestion.targetRepo}" berstatus Protected (${repoRecord.protectionReason || "dilindungi"}). Eksekusi diblokir.`

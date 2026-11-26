@@ -87,9 +87,9 @@ export async function generateDailySuggestions(dateKey: string = getTodayWibKey(
     create: { id: 1 },
   });
 
-  // Only include non-protected repositories (token-optimized: max 12 repos)
+  // Only include non-protected, public repositories (token-optimized: max 12 repos)
   const allowedRepos = await prisma.repository.findMany({
-    where: { isProtected: false },
+    where: { isProtected: false, isPrivate: false },
     orderBy: { lastSyncedAt: "desc" },
     take: 12,
   });

@@ -81,8 +81,16 @@ export async function hasExecutedToday(dateKey: string = getTodayWibKey()): Prom
 export function detectDefaultProtection(
   name: string,
   description: string | null,
-  language: string | null
+  language: string | null,
+  isPrivate: boolean = false
 ): { isProtected: boolean; reason: string | null } {
+  if (isPrivate) {
+    return {
+      isProtected: true,
+      reason: "Private repository (dilindungi otomatis)",
+    };
+  }
+
   const text = `${name} ${description ?? ""}`.toLowerCase();
   if (
     name.toLowerCase() === (process.env.GITHUB_USERNAME || "ArdanR3").toLowerCase() ||

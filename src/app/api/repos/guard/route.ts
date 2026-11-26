@@ -13,11 +13,30 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Field id dan isProtected wajib diisi." }, { status: 400 });
     }
 
+    const existing = await prisma.repository.findUnique({
+      where: { id: body.id },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Repository tidak ditemukan." }, { status: 404 });
+    }
+
+    if (existing.isPrivate && body.isProtected === false) {
+      return NextResponse.json(
+        { error: "Repository berstatus Private dikunci permanen dan tidak bisa diubah menjadi Allowed." },
+        { status: 403 }
+      );
+    }
+
     const updated = await prisma.repository.update({
       where: { id: body.id },
       data: {
-        isProtected: body.isProtected,
-        protectionReason: body.isProtected ? body.protectionReason || "Dilindungi manual oleh user" : null,
+        isProtected: existing.isPrivate ? true : body.isProtected,
+        protectionReason: existing.isPrivate
+          ? "Private repository (dilindungi otomatis)"
+          : body.isProtected
+          ? body.protectionReason || "Dilindungi manual oleh user"
+          : null,
       },
     });
 

@@ -90,7 +90,12 @@ export async function syncRepositoriesFromGitHub() {
         where: { githubId: repo.id },
       });
 
-      const autoProtect = detectDefaultProtection(repo.name, repo.description ?? null, repo.language ?? null);
+      const autoProtect = detectDefaultProtection(
+        repo.name,
+        repo.description ?? null,
+        repo.language ?? null,
+        repo.private
+      );
 
       const record = await prisma.repository.upsert({
         where: { githubId: repo.id },
@@ -101,6 +106,12 @@ export async function syncRepositoriesFromGitHub() {
           language: repo.language,
           defaultBranch: repo.default_branch || "main",
           isPrivate: repo.private,
+          ...(repo.private
+            ? {
+                isProtected: true,
+                protectionReason: "Private repository (dilindungi otomatis)",
+              }
+            : {}),
           recentCommits: recentCommits.length > 0 ? JSON.stringify(recentCommits) : existing?.recentCommits ?? "[]",
           lastSyncedAt: new Date(),
         },
