@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -10,6 +11,7 @@ import {
   GitCommitHorizontal,
   GitPullRequest,
 } from "lucide-react";
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 export interface ActivityLogItem {
   id: number;
@@ -31,6 +33,27 @@ interface ActivityTimelineProps {
 }
 
 export function ActivityTimeline({ logs }: ActivityTimelineProps) {
+  const chartData = useMemo(() => {
+    const map = new Map<string, { day: string; success: number; failed: number }>();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const key = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Jakarta",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(d);
+      map.set(key, { day: key.slice(5), success: 0, failed: 0 });
+    }
+    for (const log of logs) {
+      const entry = map.get(log.dateKey);
+      if (!entry) continue;
+      if (log.status === "SUCCESS") entry.success += 1;
+      else entry.failed += 1;
+    }
+    return Array.from(map.values());
+  }, [logs]);
+
   return (
     <section aria-labelledby="activity-log-heading" className="nb-card flex flex-col p-5">
       <div className="mb-4 flex items-start justify-between gap-2 border-b-3 border-black pb-4">
@@ -56,6 +79,54 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
         </span>
       </div>
 
+      {logs.length > 0 && (
+        <div className="mb-4 border-2 border-black bg-[#FFFDF5] p-3 shadow-[3px_3px_0_0_#000]">
+          <div className="mb-2 flex items-center justify-between font-mono text-[10px] font-extrabold uppercase text-black">
+            <span>Aktivitas 7 Hari Terakhir (WIB)</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2.5 w-2.5 border border-black bg-[#88D498]" aria-hidden="true" />
+                Sukses
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2.5 w-2.5 border border-black bg-[#FF6B6B]" aria-hidden="true" />
+                Gagal
+              </span>
+            </span>
+          </div>
+          <div
+            role="img"
+            aria-label="Grafik aktivitas commit 7 hari terakhir"
+            className="h-24 w-full"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 10, fontFamily: "monospace", fontWeight: 700, fill: "#000000" }}
+                  axisLine={{ stroke: "#000000", strokeWidth: 2 }}
+                  tickLine={false}
+                />
+                <Tooltip
+                  cursor={{ fill: "rgba(255, 210, 63, 0.25)" }}
+                  contentStyle={{
+                    border: "2px solid #000000",
+                    borderRadius: 0,
+                    backgroundColor: "#FFFFFF",
+                    fontFamily: "monospace",
+                    fontSize: "11px",
+                    fontWeight: 800,
+                    boxShadow: "3px 3px 0 0 #000000",
+                  }}
+                />
+                <Bar dataKey="success" name="Sukses" stackId="a" fill="#88D498" stroke="#000000" strokeWidth={1.5} />
+                <Bar dataKey="failed" name="Gagal" stackId="a" fill="#FF6B6B" stroke="#000000" strokeWidth={1.5} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {logs.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center border-2 border-dashed border-black bg-[#F5F0E8] px-4 py-12 text-center">
           <GitCommitHorizontal className="mb-2 h-7 w-7 text-black" aria-hidden="true" />
@@ -72,7 +143,6 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
 
             return (
               <li key={log.id} className="relative">
-                {/* Square Brutalist Timeline Node */}
                 <span
                   aria-hidden="true"
                   className={`absolute -left-6 top-4 h-4 w-4 border-2 border-black ${

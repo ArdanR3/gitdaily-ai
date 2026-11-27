@@ -15,7 +15,9 @@ import {
   BookOpen,
   Terminal,
   Zap,
+  Command as CommandIcon,
 } from "lucide-react";
+import { openCommandPalette } from "@/components/CommandPalette";
 
 export interface ProfileData {
   profile: {
@@ -77,6 +79,17 @@ export function HeaderProfile({
           </div>
 
           <nav aria-label="Navigasi halaman" className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              title="Buka Command Palette (Ctrl+K)"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3 py-1.5 font-mono text-xs font-extrabold uppercase text-black sm:min-h-[36px]"
+            >
+              <CommandIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="sr-only">Buka Command Palette </span>
+              <span>Ctrl+K</span>
+            </button>
+
             <Link
               href="/materials"
               className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-3 py-1.5 text-xs font-bold uppercase text-black sm:min-h-[36px]"

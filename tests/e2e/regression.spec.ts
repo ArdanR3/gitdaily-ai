@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect, type Page } from "@playwright/test";
 
 function loadDashboardPassword(): string {
@@ -189,6 +190,37 @@ test.describe("GitDaily AI — V2 Regression Suite", () => {
       expect(metrics.overflowPx, `Horizontal overflow on ${route}: +${metrics.overflowPx}px`).toBeLessThanOrEqual(0);
       expect(metrics.smallInputs, `Inputs < 16px on ${route}: ${JSON.stringify(metrics.smallInputs)}`).toEqual([]);
       expect(metrics.smallButtons, `Action buttons < 44px on ${route}: ${JSON.stringify(metrics.smallButtons)}`).toEqual([]);
+    }
+  });
+
+  test("5. Command Palette (Ctrl+K) & Audit WCAG 2.2 AA (axe-core)", async ({ page }) => {
+    await loginToDashboard(page);
+
+    // Verify Command Palette opens with Ctrl+K and closes with Escape
+    await page.keyboard.press("Control+k");
+    const cmdDialog = page.getByRole("dialog");
+    await expect(cmdDialog).toBeVisible();
+    await expect(cmdDialog.getByPlaceholder(/Ketik perintah/i)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(cmdDialog).toBeHidden();
+
+    for (const route of ["/", "/materials", "/settings"]) {
+      await page.goto(route, { waitUntil: "networkidle" });
+      await page.waitForTimeout(400);
+
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+        .analyze();
+
+      const severe = results.violations.filter(
+        (v) => v.impact === "critical" || v.impact === "serious"
+      );
+      expect(
+        severe,
+        `WCAG critical/serious violations on ${route}: ${JSON.stringify(
+          severe.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length }))
+        )}`
+      ).toEqual([]);
     }
   });
 });

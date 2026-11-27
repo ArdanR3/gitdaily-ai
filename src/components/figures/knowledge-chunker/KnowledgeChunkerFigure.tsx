@@ -274,7 +274,7 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
         <svg
           viewBox="0 0 820 400"
           className="mx-auto h-auto w-full max-w-[860px] select-none"
-          role="img"
+          role="group"
           aria-label="Diagram anatomi isometrik tiga objek terpisah: Rak Buku Perpustakaan dengan buku yang ditarik keluar, Meja Baca Buku Terbuka 3.000 karakter, dan Dok Kaset Ungu GITBOY-01."
         >
           {/* FLOOR DATA SIGNAL CABLES CONNECTING THE 3 STANDALONE STATIONS */}
@@ -890,7 +890,6 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
           <g
             role="button"
             tabIndex={0}
-            aria-label="Pilih detail Tahap 01 Codex Shelf"
             aria-pressed={selectedStage === "01"}
             onClick={() => setSelectedStage("01")}
             onMouseEnter={() => setHoverStage("01")}
@@ -921,7 +920,6 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
           <g
             role="button"
             tabIndex={0}
-            aria-label="Pilih detail Tahap 02 3K Open Book"
             aria-pressed={selectedStage === "02"}
             onClick={() => setSelectedStage("02")}
             onMouseEnter={() => setHoverStage("02")}
@@ -952,7 +950,6 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
           <g
             role="button"
             tabIndex={0}
-            aria-label="Pilih detail Tahap 03 Lilac Cartridge"
             aria-pressed={selectedStage === "03"}
             onClick={() => setSelectedStage("03")}
             onMouseEnter={() => setHoverStage("03")}
