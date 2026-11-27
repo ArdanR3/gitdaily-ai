@@ -26,20 +26,20 @@ interface KnowledgeChunkerFigureProps {
 
 const COS30 = 0.8660254;
 const SIN30 = 0.5;
-const ORIGIN_X = 258;
-const ORIGIN_Y = 248;
 
-function iso(x: number, y: number, z: number): [number, number] {
-  const sx = ORIGIN_X + (x - y) * COS30;
-  const sy = ORIGIN_Y + (x + y) * SIN30 - z;
+function isoAt(ox: number, oy: number, x: number, y: number, z: number): [number, number] {
+  const sx = ox + (x - y) * COS30;
+  const sy = oy + (x + y) * SIN30 - z;
   return [Math.round(sx * 10) / 10, Math.round(sy * 10) / 10];
 }
 
-function pts(list: Array<[number, number, number]>): string {
-  return list.map(([x, y, z]) => iso(x, y, z).join(",")).join(" ");
+function ptsAt(ox: number, oy: number, list: Array<[number, number, number]>): string {
+  return list.map(([x, y, z]) => isoAt(ox, oy, x, y, z).join(",")).join(" ");
 }
 
 function IsoBox({
+  ox,
+  oy,
   x,
   y,
   z,
@@ -52,6 +52,8 @@ function IsoBox({
   stroke = "#111111",
   strokeWidth = 1.75,
 }: {
+  ox: number;
+  oy: number;
   x: number;
   y: number;
   z: number;
@@ -64,19 +66,19 @@ function IsoBox({
   stroke?: string;
   strokeWidth?: number;
 }) {
-  const top = pts([
+  const top = ptsAt(ox, oy, [
     [x, y, z + h],
     [x + w, y, z + h],
     [x + w, y + d, z + h],
     [x, y + d, z + h],
   ]);
-  const right = pts([
+  const right = ptsAt(ox, oy, [
     [x + w, y, z],
     [x + w, y + d, z],
     [x + w, y + d, z + h],
     [x + w, y, z + h],
   ]);
-  const left = pts([
+  const left = ptsAt(ox, oy, [
     [x, y + d, z],
     [x + w, y + d, z],
     [x + w, y + d, z + h],
@@ -93,6 +95,14 @@ function IsoBox({
 }
 
 const STAGE_ORDER: ChunkerStageId[] = ["01", "02", "03"];
+
+// Independent local origins for the 3 separated isometric assemblies in viewBox 0 0 820 400
+const O1_X = 206;
+const O1_Y = 278;
+const O2_X = 432;
+const O2_Y = 282;
+const O3_X = 646;
+const O3_Y = 288;
 
 export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProps) {
   const [selectedStage, setSelectedStage] = React.useState<ChunkerStageId>("01");
@@ -128,13 +138,13 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
       bg: "bg-[#86efac]",
     },
     "02": {
-      label: "02 · ~3K PAGE INDEXER",
+      label: "02 · ~3K OPEN BOOK",
       metric: `${telemetry.totalChunks} CHUNK (~3.000 CHAR)`,
       status: telemetry.totalChunks > 0 ? "INDEXED" : "STANDBY",
       bg: "bg-[#facc15]",
     },
     "03": {
-      label: "03 · LILAC CARTRIDGE BAY",
+      label: "03 · LILAC CARTRIDGE",
       metric: `${telemetry.activeMaterialsCount} AKTIF · ${activeBab}`,
       status: telemetry.activeMaterialsCount > 0 ? "GITBOY READY" : "NO CART",
       bg: "bg-[#c4b5fd]",
@@ -168,13 +178,60 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
     };
   }
 
-  // Signal path from middle indexer through PCB backplane into right-side Cartridge Bay
-  const busPathPts = pts([
-    [40, -18, 66],
-    [54, -18, 66],
-    [54, -18, 22],
-    [72, -18, 22],
-  ]);
+  // Helper to build curved arched open-book page path on Object 2
+  const p = (x: number, y: number, z: number) => isoAt(O2_X, O2_Y, x, y, z);
+
+  const leftPageTopPath = (() => {
+    const [a1, a2] = p(0, -34, 24);
+    const [c1x, c1y] = p(-18, -34, 34);
+    const [c2x, c2y] = p(-36, -34, 30);
+    const [b1, b2] = p(-46, -34, 22);
+    const [d1, d2] = p(-46, 34, 22);
+    const [c3x, c3y] = p(-36, 34, 30);
+    const [c4x, c4y] = p(-18, 34, 34);
+    const [e1, e2] = p(0, 34, 24);
+    return `M ${a1},${a2} C ${c1x},${c1y} ${c2x},${c2y} ${b1},${b2} L ${d1},${d2} C ${c3x},${c3y} ${c4x},${c4y} ${e1},${e2} Z`;
+  })();
+
+  const leftPageFrontEdge = (() => {
+    const [d1, d2] = p(-46, 34, 22);
+    const [c3x, c3y] = p(-36, 34, 30);
+    const [c4x, c4y] = p(-18, 34, 34);
+    const [e1, e2] = p(0, 34, 24);
+    const [e1b, e2b] = p(0, 34, 17);
+    const [d1b, d2b] = p(-46, 34, 16);
+    return `M ${d1},${d2} C ${c3x},${c3y} ${c4x},${c4y} ${e1},${e2} L ${e1b},${e2b} L ${d1b},${d2b} Z`;
+  })();
+
+  const rightPageTopPath = (() => {
+    const [a1, a2] = p(0, -34, 24);
+    const [c1x, c1y] = p(18, -34, 34);
+    const [c2x, c2y] = p(36, -34, 30);
+    const [b1, b2] = p(46, -34, 22);
+    const [d1, d2] = p(46, 34, 22);
+    const [c3x, c3y] = p(36, 34, 30);
+    const [c4x, c4y] = p(18, 34, 34);
+    const [e1, e2] = p(0, 34, 24);
+    return `M ${a1},${a2} C ${c1x},${c1y} ${c2x},${c2y} ${b1},${b2} L ${d1},${d2} C ${c3x},${c3y} ${c4x},${c4y} ${e1},${e2} Z`;
+  })();
+
+  const rightPageFrontEdge = (() => {
+    const [e1, e2] = p(0, 34, 24);
+    const [c4x, c4y] = p(18, 34, 34);
+    const [c3x, c3y] = p(36, 34, 30);
+    const [d1, d2] = p(46, 34, 22);
+    const [d1b, d2b] = p(46, 34, 16);
+    const [e1b, e2b] = p(0, 34, 17);
+    return `M ${e1},${e2} C ${c4x},${c4y} ${c3x},${c3y} ${d1},${d2} L ${d1b},${d2b} L ${e1b},${e2b} Z`;
+  })();
+
+  const rightPageSideEdge = (() => {
+    const [b1, b2] = p(46, -34, 22);
+    const [d1, d2] = p(46, 34, 22);
+    const [d1b, d2b] = p(46, 34, 16);
+    const [b1b, b2b] = p(46, -34, 16);
+    return `M ${b1},${b2} L ${d1},${d2} L ${d1b},${d2b} L ${b1b},${b2b} Z`;
+  })();
 
   return (
     <section
@@ -215,504 +272,621 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
         }}
       >
         <svg
-          viewBox="0 0 560 355"
-          className="mx-auto h-auto w-full max-w-[780px] select-none"
+          viewBox="0 0 820 400"
+          className="mx-auto h-auto w-full max-w-[860px] select-none"
           role="img"
-          aria-label="Diagram anatomi isometrik rak buku perpustakaan Codex Archive Rack dengan rak buku atas, pemindai halaman 3.000 karakter di rak tengah, panel PCB belakang, dan dok kaset lilac GITBOY-01."
+          aria-label="Diagram anatomi isometrik tiga objek terpisah: Rak Buku Perpustakaan dengan buku yang ditarik keluar, Meja Baca Buku Terbuka 3.000 karakter, dan Dok Kaset Ungu GITBOY-01."
         >
-          {/* Hard ground shadow under bookshelf and side dock */}
-          <polygon
-            points={pts([
-              [-62, -28, -10],
-              [104, -28, -10],
-              [104, 30, -10],
-              [-62, 30, -10],
-            ])}
-            fill="#111111"
-            fillOpacity="0.12"
-          />
-
-          {/* LAYER 1 (BACK): GREEN PCB BACKPLANE + GOLD BUS + LILAC CARTRIDGE BAY */}
-          <motion.g
-            animate={exploded ? { x: 46, y: -16 } : { x: 0, y: 0 }}
-            transition={springExplode}
-          >
-            {/* PCB Backplane board behind the rack */}
-            <IsoBox
-              x={-54}
-              y={-28}
-              z={6}
-              w={100}
-              d={6}
-              h={130}
-              topFill="#16a34a"
-              rightFill="#14532d"
-              leftFill="#15803d"
-              strokeWidth={2}
-            />
-
-            {/* Gold PCB bus traces along backplane face */}
-            <g fill="none" stroke="#facc15" strokeWidth={1.6} strokeLinecap="square">
-              <polyline points={pts([[-40, -22, 118], [32, -22, 118], [32, -22, 72]])} />
-              <polyline points={pts([[-32, -22, 82], [20, -22, 82], [20, -22, 24], [46, -22, 24]])} />
-              <polyline points={pts([[-42, -22, 42], [12, -22, 42], [12, -22, 18]])} />
-            </g>
-
-            {/* Solder pads & IC chip on PCB backplane */}
-            <IsoBox x={-16} y={-22} z={56} w={22} d={4} h={18} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.25} />
-            {[
-              [-40, 118],
-              [-32, 82],
-              [-42, 42],
-              [32, 72],
-            ].map(([px, pz]) => {
-              const [cx, cy] = iso(px, -21.5, pz);
-              return <circle key={`${px}-${pz}`} cx={cx} cy={cy} r={2.4} fill="#facc15" stroke="#111111" strokeWidth={1} />;
-            })}
-
-            {/* Black-gold data bus cable routing from rack into side Cartridge Bay */}
-            <polyline points={busPathPts} fill="none" stroke="#111111" strokeWidth={5.2} strokeLinejoin="round" />
+          {/* FLOOR DATA SIGNAL CABLES CONNECTING THE 3 STANDALONE STATIONS */}
+          <g fill="none" strokeLinecap="round" strokeLinejoin="round">
+            {/* Shelf -> Open Book floor bus */}
             <polyline
-              points={busPathPts}
-              fill="none"
-              stroke={isStage03 ? "#c4b5fd" : "#facc15"}
-              strokeWidth={2.2}
-              strokeDasharray="5 3"
-              strokeLinejoin="round"
+              points="252,298 308,330 356,304"
+              stroke="#111111"
+              strokeWidth={3.6}
+              strokeOpacity="0.22"
+            />
+            <polyline
+              points="252,296 308,328 356,302"
+              stroke={isStage01 || isStage02 ? "#16a34a" : "#111111"}
+              strokeWidth={2}
+              strokeDasharray="4 4"
             />
 
-            {/* [03] LILAC CARTRIDGE BAY (Side Dock + Sliding Lilac Cartridge) */}
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Tahap 03 Lilac Cartridge Bay: dok pengisian kaset ungu GITBOY-01"
-              aria-pressed={selectedStage === "03"}
-              onClick={() => setSelectedStage("03")}
-              onMouseEnter={() => setHoverStage("03")}
-              onMouseLeave={() => setHoverStage(null)}
-              onKeyDown={handleSvgStageKeyDown("03")}
-              className="cursor-pointer focus:outline-none"
-            >
-              {/* Dock plinth feet */}
-              <IsoBox x={54} y={-22} z={-8} w={8} d={8} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.25} />
-              <IsoBox x={92} y={14} z={-8} w={8} d={8} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.25} />
+            {/* Open Book -> Lilac Cartridge Dock floor bus */}
+            <polyline
+              points="496,304 544,330 584,308"
+              stroke="#111111"
+              strokeWidth={3.6}
+              strokeOpacity="0.22"
+            />
+            <polyline
+              points="496,302 544,328 584,306"
+              stroke={isStage02 || isStage03 ? "#8b5cf6" : "#111111"}
+              strokeWidth={2}
+              strokeDasharray="4 4"
+            />
+          </g>
 
-              {/* Dark Dock Housing */}
-              <IsoBox
-                x={52}
-                y={-22}
-                z={0}
-                w={50}
-                d={46}
-                h={24}
-                topFill="#27272a"
-                rightFill="#111111"
-                leftFill="#18181b"
-                strokeWidth={2}
-              />
+          {/* ========================================================================
+              OBJECT 1: [01] CODEX SHELF — 3-Tier Library Bookshelf (Left, x ~ 140..275)
+              Open front faces +x (down-right toward the Reading Desk)
+             ======================================================================== */}
+          <motion.g
+            animate={exploded ? { x: -24, y: -10 } : { x: 0, y: 0 }}
+            transition={springExplode}
+            role="button"
+            tabIndex={0}
+            aria-label="Tahap 01 Codex Shelf: rak buku perpustakaan dengan buku hijau mint yang ditarik keluar"
+            aria-pressed={selectedStage === "01"}
+            onClick={() => setSelectedStage("01")}
+            onMouseEnter={() => setHoverStage("01")}
+            onMouseLeave={() => setHoverStage(null)}
+            onKeyDown={handleSvgStageKeyDown("01")}
+            className="cursor-pointer focus:outline-none"
+          >
+            {/* Ground shadow under bookshelf */}
+            <polygon
+              points={ptsAt(O1_X, O1_Y, [
+                [-26, -46, -8],
+                [28, -46, -8],
+                [28, 46, -8],
+                [-26, 46, -8],
+              ])}
+              fill="#111111"
+              fillOpacity="0.12"
+            />
 
-              {/* Gold 5-pin edge connector inside dock */}
-              {[0, 1, 2, 3, 4].map((idx) => (
-                <IsoBox
-                  key={idx}
-                  x={60 + idx * 7}
-                  y={-12}
-                  z={24}
-                  w={4}
-                  d={18}
-                  h={4}
-                  topFill="#facc15"
-                  rightFill="#ca8a04"
-                  leftFill="#eab308"
-                  strokeWidth={1}
-                />
-              ))}
+            {/* Four cabinet feet */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-22} y={-42} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={14} y={-42} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-22} y={34} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={14} y={34} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
 
-              {/* Dock status LED */}
-              {(() => {
-                const [lx, ly] = iso(95, 16, 24.5);
-                return (
-                  <circle
-                    cx={lx}
-                    cy={ly}
-                    r={3.5}
-                    fill={isStage03 ? "#86efac" : telemetry.activeMaterialsCount > 0 ? "#c4b5fd" : "#52525b"}
-                    stroke="#111111"
-                    strokeWidth={1.25}
-                  />
-                );
-              })()}
+            {/* Back Cabinet Wall (-x) */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-24} y={-44} z={0} w={6} d={88} h={132} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#eab308" strokeWidth={2} />
 
-              {/* Sliding Lilac GITBOY-01 Cartridge */}
-              <motion.g
-                animate={exploded ? { y: -22 } : isStage03 ? { y: -14 } : { y: 0 }}
-                transition={springPart}
-              >
-                <IsoBox
-                  x={58}
-                  y={-14}
-                  z={24}
-                  w={38}
-                  d={30}
-                  h={34}
-                  topFill="#c4b5fd"
-                  rightFill="#8b5cf6"
-                  leftFill="#a78bfa"
-                  strokeWidth={2}
-                />
-
-                {/* Cartridge grip ribs on top */}
-                {[0, 5, 10].map((dy) => {
-                  const [x1, y1] = iso(62, -10 + dy, 58.2);
-                  const [x2, y2] = iso(92, -10 + dy, 58.2);
-                  return <line key={dy} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.3} />;
-                })}
-
-                {/* Cartridge front sticker decal */}
-                <polygon
-                  points={pts([
-                    [62, 16.2, 30],
-                    [92, 16.2, 30],
-                    [92, 16.2, 52],
-                    [62, 16.2, 52],
-                  ])}
-                  fill="#ffffff"
-                  stroke="#111111"
-                  strokeWidth={1.4}
-                />
-                <polygon
-                  points={pts([
-                    [62, 16.3, 46],
-                    [92, 16.3, 46],
-                    [92, 16.3, 52],
-                    [62, 16.3, 52],
-                  ])}
-                  fill="#facc15"
-                  stroke="#111111"
-                  strokeWidth={1.2}
-                />
-                {/* Tiny printed text lines on cartridge label */}
-                {[35, 40].map((lz) => {
-                  const [x1, y1] = iso(66, 16.4, lz);
-                  const [x2, y2] = iso(86, 16.4, lz);
-                  return <line key={lz} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.2} />;
-                })}
-              </motion.g>
-
-              {/* Red eject lever on front of dock */}
-              <IsoBox x={70} y={24} z={6} w={14} d={6} h={9} topFill="#fb7185" rightFill="#e11d48" leftFill="#f43f5e" strokeWidth={1.4} />
-            </g>
-          </motion.g>
-
-          {/* LAYER 2 (MIDDLE): 3-TIER BOOKSHELF CARCASS + CODEX SHELF + ~3K PAGE INDEXER */}
-          <g>
-            {/* Four heavy dark cabinet feet */}
-            <IsoBox x={-56} y={-22} z={-8} w={10} d={10} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.4} />
-            <IsoBox x={36} y={-22} z={-8} w={10} d={10} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.4} />
-            <IsoBox x={-56} y={14} z={-8} w={10} d={10} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.4} />
-            <IsoBox x={36} y={14} z={-8} w={10} d={10} h={8} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.4} />
+            {/* Far Side Wall (-y, rear-right) */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-18} y={-44} z={0} w={42} d={6} h={132} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={2} />
 
             {/* Bottom Plinth Shelf */}
-            <IsoBox x={-58} y={-24} z={0} w={106} d={50} h={8} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#f5f0dc" strokeWidth={2} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-18} y={-38} z={0} w={42} d={76} h={7} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={2} />
 
-            {/* Left Cabinet Side Wall (rear-left, painted before shelf interiors) */}
-            <IsoBox x={-58} y={-24} z={8} w={8} d={50} h={132} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#f5f0dc" strokeWidth={2} />
+            {/* --- BOTTOM TIER BOOKS (z = 7..39) --- */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-35} z={7} w={34} d={11} h={31} topFill="#ddd6fe" rightFill="#c4b5fd" leftFill="#8b5cf6" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-23} z={7} w={34} d={10} h={28} topFill="#fef08a" rightFill="#facc15" leftFill="#ca8a04" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-12} z={7} w={34} d={12} h={32} topFill="#93c5fd" rightFill="#60a5fa" leftFill="#2563eb" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={1} z={7} w={34} d={11} h={29} topFill="#bbf7d0" rightFill="#86efac" leftFill="#16a34a" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={13} z={7} w={34} d={11} h={31} topFill="#fecdd3" rightFill="#fb7185" leftFill="#e11d48" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={25} z={7} w={34} d={10} h={26} topFill="#fef08a" rightFill="#facc15" leftFill="#ca8a04" strokeWidth={1.5} />
 
-            {/* Lower Tier Interior: Archival Codex Boxes + Data Conduit */}
-            <IsoBox x={-46} y={-14} z={8} w={26} d={32} h={28} topFill="#e5e5df" rightFill="#a1a1aa" leftFill="#d4d4d8" strokeWidth={1.4} />
-            <IsoBox x={-16} y={-14} z={8} w={26} d={32} h={28} topFill="#fef08a" rightFill="#ca8a04" leftFill="#eab308" strokeWidth={1.4} />
-            <IsoBox x={14} y={-12} z={8} w={22} d={28} h={22} topFill="#c4b5fd" rightFill="#8b5cf6" leftFill="#a78bfa" strokeWidth={1.4} />
-            {/* Label plates on archival boxes */}
-            <polygon points={pts([[-42, 18.2, 20], [-24, 18.2, 20], [-24, 18.2, 28], [-42, 18.2, 28]])} fill="#ffffff" stroke="#111111" strokeWidth={1.1} />
-            <polygon points={pts([[-12, 18.2, 20], [6, 18.2, 20], [6, 18.2, 28], [-12, 18.2, 28]])} fill="#ffffff" stroke="#111111" strokeWidth={1.1} />
+            {/* Middle Shelf Divider */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-18} y={-38} z={44} w={42} d={76} h={6} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={1.8} />
 
-            {/* Middle Shelf Divider Plank */}
-            <IsoBox x={-50} y={-24} z={46} w={90} d={50} h={6} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#f5f0dc" strokeWidth={1.8} />
+            {/* --- MIDDLE TIER BOOKS (z = 50..84) + HERO MINT BOOK PULL-OUT --- */}
+            {/* Back-right books before the Hero Book */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-35} z={50} w={34} d={11} h={32} topFill="#93c5fd" rightFill="#60a5fa" leftFill="#2563eb" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-23} z={50} w={34} d={11} h={30} topFill="#fef08a" rightFill="#facc15" leftFill="#ca8a04" strokeWidth={1.5} />
 
-            {/* [02] ~3K PAGE INDEXER (Middle Tier: Open Book on Lectern + Sliding Yellow Scanner Bar) */}
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Tahap 02 3K Page Indexer: buku terbuka di rak tengah dengan pemindai pemotong teks 3.000 karakter"
-              aria-pressed={selectedStage === "02"}
-              onClick={() => setSelectedStage("02")}
-              onMouseEnter={() => setHoverStage("02")}
-              onMouseLeave={() => setHoverStage(null)}
-              onKeyDown={handleSvgStageKeyDown("02")}
-              className="cursor-pointer focus:outline-none"
-            >
-              {/* Lectern reading cradle */}
-              <IsoBox x={-42} y={-16} z={52} w={74} d={34} h={6} topFill="#e4e4e7" rightFill="#a1a1aa" leftFill="#d4d4d8" strokeWidth={1.4} />
-
-              {/* Open Book (gently bounces up when Stage 02 is active) */}
-              <motion.g animate={isStage02 ? { y: -4 } : { y: 0 }} transition={springPart}>
-                {/* Left open page stack */}
-                <IsoBox x={-38} y={-12} z={58} w={31} d={26} h={7} topFill="#ffffff" rightFill="#e4e4e7" leftFill="#f4f4f5" strokeWidth={1.5} />
-                {/* Right open page stack */}
-                <IsoBox x={-5} y={-12} z={58} w={31} d={26} h={7} topFill="#ffffff" rightFill="#e4e4e7" leftFill="#f4f4f5" strokeWidth={1.5} />
-                {/* Center gutter spine */}
-                <IsoBox x={-7} y={-12} z={58} w={2} d={26} h={6} topFill="#18181b" rightFill="#111111" leftFill="#111111" strokeWidth={1} />
-                {/* Printed text lines on both open pages */}
-                {[-8, -2, 4, 10].map((dy) => {
-                  const [l1x, l1y] = iso(-34, dy, 65.3);
-                  const [l2x, l2y] = iso(-11, dy, 65.3);
-                  const [r1x, r1y] = iso(-1, dy, 65.3);
-                  const [r2x, r2y] = iso(22, dy, 65.3);
-                  return (
-                    <g key={dy} stroke="#111111" strokeWidth={1.1}>
-                      <line x1={l1x} y1={l1y} x2={l2x} y2={l2y} />
-                      <line x1={r1x} y1={r1y} x2={r2x} y2={r2y} />
-                    </g>
-                  );
-                })}
-                {/* Lilac bookmark ribbon */}
-                <polygon
-                  points={pts([
-                    [-6, 14, 65.2],
-                    [-2, 14, 65.2],
-                    [-2, 22, 56],
-                    [-6, 22, 56],
-                  ])}
-                  fill="#c4b5fd"
-                  stroke="#111111"
-                  strokeWidth={1.1}
-                />
-              </motion.g>
-
-              {/* Twin horizontal scanner guide rods */}
-              <IsoBox x={-44} y={-14} z={76} w={78} d={3} h={3} topFill="#d4d4d8" rightFill="#71717a" leftFill="#a1a1aa" strokeWidth={1.1} />
-              <IsoBox x={-44} y={12} z={76} w={78} d={3} h={3} topFill="#d4d4d8" rightFill="#71717a" leftFill="#a1a1aa" strokeWidth={1.1} />
-
-              {/* Sliding Yellow ~3K Scanner Bar */}
-              <motion.g animate={isStage02 ? { x: 16, y: 9 } : { x: 0, y: 0 }} transition={springPart}>
-                <IsoBox
-                  x={-26}
-                  y={-15}
-                  z={73}
-                  w={14}
-                  d={32}
-                  h={10}
-                  topFill="#facc15"
-                  rightFill="#ca8a04"
-                  leftFill="#eab308"
-                  strokeWidth={1.75}
-                />
-                {/* Optical scan line highlight under bar */}
-                <polygon
-                  points={pts([
-                    [-21, -12, 66],
-                    [-17, -12, 66],
-                    [-17, 14, 66],
-                    [-21, 14, 66],
-                  ])}
-                  fill={isStage02 ? "#facc15" : "#fef08a"}
-                  fillOpacity={isStage02 ? "0.75" : "0.35"}
-                />
-              </motion.g>
-
-              {/* Middle Tier Status LED */}
-              {(() => {
-                const [lx, ly] = iso(-46, 22, 50);
-                return (
-                  <circle
-                    cx={lx}
-                    cy={ly}
-                    r={3.2}
-                    fill={isStage02 ? "#facc15" : "#e4e4e7"}
-                    stroke="#111111"
-                    strokeWidth={1.25}
-                  />
-                );
-              })()}
-            </g>
-
-            {/* Upper Shelf Divider Plank */}
-            <IsoBox x={-50} y={-24} z={92} w={90} d={50} h={6} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#f5f0dc" strokeWidth={1.8} />
-
-            {/* [01] CODEX SHELF (Top Tier: Upright Books + Interactive Pull-Out Hero Book + Tilted Book + Metal Bookend) */}
-            <g
-              role="button"
-              tabIndex={0}
-              aria-label="Tahap 01 Codex Shelf: deretan buku dokumen sumber di rak atas"
-              aria-pressed={selectedStage === "01"}
-              onClick={() => setSelectedStage("01")}
-              onMouseEnter={() => setHoverStage("01")}
-              onMouseLeave={() => setHoverStage(null)}
-              onKeyDown={handleSvgStageKeyDown("01")}
-              className="cursor-pointer focus:outline-none"
-            >
-              {/* Book 1: Blue Technical Manual */}
-              <IsoBox x={-46} y={-14} z={98} w={11} d={32} h={34} topFill="#93c5fd" rightFill="#2563eb" leftFill="#60a5fa" strokeWidth={1.6} />
-              {/* Book 2: Hero Mint Green Codex (pulls out & lifts slightly on Stage 01 hover/select!) */}
-              <motion.g
-                animate={isStage01 ? { x: -10, y: 6 } : { x: 0, y: 0 }}
-                transition={springPart}
-              >
-                <IsoBox
-                  x={-34}
-                  y={-14}
-                  z={98}
-                  w={13}
-                  d={34}
-                  h={38}
-                  topFill="#bbf7d0"
-                  rightFill="#16a34a"
-                  leftFill="#86efac"
-                  strokeWidth={2}
-                />
-                {/* Spine classification band on hero mint book */}
-                <polygon
-                  points={pts([
-                    [-34, 20.2, 124],
-                    [-21, 20.2, 124],
-                    [-21, 20.2, 130],
-                    [-34, 20.2, 130],
-                  ])}
-                  fill="#ffffff"
-                  stroke="#111111"
-                  strokeWidth={1.2}
-                />
-              </motion.g>
-
-              {/* Book 3: Yellow Spec Book */}
-              <IsoBox x={-20} y={-14} z={98} w={11} d={32} h={32} topFill="#fef08a" rightFill="#ca8a04" leftFill="#facc15" strokeWidth={1.6} />
-              {/* Book 4: Lilac Algorithm Volume */}
-              <IsoBox x={-8} y={-14} z={98} w={12} d={32} h={36} topFill="#ddd6fe" rightFill="#7c3aed" leftFill="#c4b5fd" strokeWidth={1.6} />
-              {/* Book 5: Coral Reference */}
-              <IsoBox x={5} y={-14} z={98} w={9} d={30} h={30} topFill="#fecdd3" rightFill="#e11d48" leftFill="#fb7185" strokeWidth={1.6} />
-
-              {/* Tilted Leaning Book propped against metal bookend */}
-              <g stroke="#111111" strokeWidth={1.6} strokeLinejoin="round">
-                <polygon
-                  points={pts([
-                    [15, 16, 98],
-                    [23, 16, 98],
-                    [29, 16, 126],
-                    [21, 16, 126],
-                  ])}
-                  fill="#60a5fa"
-                />
-                <polygon
-                  points={pts([
-                    [23, 16, 98],
-                    [23, -12, 98],
-                    [29, -12, 126],
-                    [29, 16, 126],
-                  ])}
-                  fill="#2563eb"
-                />
-                <polygon
-                  points={pts([
-                    [21, 16, 126],
-                    [29, 16, 126],
-                    [29, -12, 126],
-                    [21, -12, 126],
-                  ])}
-                  fill="#93c5fd"
-                />
-              </g>
-
-              {/* Heavy Steel L-Shaped Bookend */}
-              <IsoBox x={28} y={-10} z={98} w={9} d={26} h={3} topFill="#d4d4d8" rightFill="#71717a" leftFill="#a1a1aa" strokeWidth={1.3} />
-              <IsoBox x={34} y={-10} z={101} w={3} d={26} h={24} topFill="#e4e4e7" rightFill="#52525b" leftFill="#a1a1aa" strokeWidth={1.3} />
-
-              {/* Top Tier Status LED */}
-              {(() => {
-                const [lx, ly] = iso(-46, 22, 96);
-                return (
-                  <circle
-                    cx={lx}
-                    cy={ly}
-                    r={3.2}
-                    fill={isStage01 ? "#86efac" : "#e4e4e7"}
-                    stroke="#111111"
-                    strokeWidth={1.25}
-                  />
-                );
-              })()}
-            </g>
-
-            {/* Right Cabinet Side Wall (painted in front of shelf interiors) */}
-            <IsoBox x={40} y={-24} z={8} w={8} d={50} h={132} topFill="#fef9c3" rightFill="#d6cfc2" leftFill="#f5f0dc" strokeWidth={2} />
-
-            {/* Dewey Decimal Library Classification Plaque on right side of cabinet */}
+            {/* Dark Empty Cavity revealed when Hero Mint Book slides out! */}
             <polygon
-              points={pts([
-                [48.3, -10, 108],
-                [48.3, 16, 108],
-                [48.3, 16, 124],
-                [48.3, -10, 124],
+              points={ptsAt(O1_X, O1_Y, [
+                [18, -11, 50],
+                [18, 3, 50],
+                [18, 3, 84],
+                [18, -11, 84],
+              ])}
+              fill="#18181b"
+              stroke="#111111"
+              strokeWidth={1.3}
+            />
+            <polygon
+              points={ptsAt(O1_X, O1_Y, [
+                [-16, -11, 50],
+                [18, -11, 50],
+                [18, 3, 50],
+                [-16, 3, 50],
+              ])}
+              fill="#27272a"
+            />
+
+            {/* HERO BOOK (Mint Green #86efac cover + white page edges) — pulls out front-right (+16, +9)! */}
+            <motion.g
+              animate={isStage01 || exploded ? { x: 16, y: 9 } : { x: 0, y: 0 }}
+              transition={springPart}
+            >
+              {/* Mint hardcover outer shell */}
+              <IsoBox
+                ox={O1_X}
+                oy={O1_Y}
+                x={-16}
+                y={-11}
+                z={50}
+                w={36}
+                d={13}
+                h={34}
+                topFill="#ffffff"
+                rightFill="#86efac"
+                leftFill="#4ade80"
+                strokeWidth={2}
+              />
+              {/* Mint top cover edges flanking white paper top */}
+              <polygon
+                points={ptsAt(O1_X, O1_Y, [
+                  [-16, -11, 84.1],
+                  [20, -11, 84.1],
+                  [20, -8.5, 84.1],
+                  [-16, -8.5, 84.1],
+                ])}
+                fill="#22c55e"
+                stroke="#111111"
+                strokeWidth={1.1}
+              />
+              <polygon
+                points={ptsAt(O1_X, O1_Y, [
+                  [-16, -0.5, 84.1],
+                  [20, -0.5, 84.1],
+                  [20, 2, 84.1],
+                  [-16, 2, 84.1],
+                ])}
+                fill="#86efac"
+                stroke="#111111"
+                strokeWidth={1.1}
+              />
+              {/* Spine label bands on front-right spine (+x face) */}
+              <polygon
+                points={ptsAt(O1_X, O1_Y, [
+                  [20.2, -9, 72],
+                  [20.2, 0, 72],
+                  [20.2, 0, 78],
+                  [20.2, -9, 78],
+                ])}
+                fill="#ffffff"
+                stroke="#111111"
+                strokeWidth={1.2}
+              />
+              <polygon
+                points={ptsAt(O1_X, O1_Y, [
+                  [20.2, -9, 55],
+                  [20.2, 0, 55],
+                  [20.2, 0, 58],
+                  [20.2, -9, 58],
+                ])}
+                fill="#facc15"
+                stroke="#111111"
+                strokeWidth={1}
+              />
+            </motion.g>
+
+            {/* Front-left books on middle shelf (painted in front of Hero Book cavity) */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={4} z={50} w={34} d={11} h={31} topFill="#ddd6fe" rightFill="#c4b5fd" leftFill="#8b5cf6" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={16} z={50} w={34} d={10} h={28} topFill="#fecdd3" rightFill="#fb7185" leftFill="#e11d48" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={27} z={50} w={34} d={9} h={32} topFill="#93c5fd" rightFill="#60a5fa" leftFill="#2563eb" strokeWidth={1.5} />
+
+            {/* Upper Shelf Divider */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-18} y={-38} z={88} w={42} d={76} h={6} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={1.8} />
+
+            {/* --- TOP TIER BOOKS (z = 94..124) + METAL BOOKEND --- */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-35} z={94} w={34} d={12} h={30} topFill="#bbf7d0" rightFill="#86efac" leftFill="#16a34a" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-22} z={94} w={34} d={10} h={28} topFill="#fecdd3" rightFill="#fb7185" leftFill="#e11d48" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={-11} z={94} w={34} d={12} h={32} topFill="#fef08a" rightFill="#facc15" leftFill="#ca8a04" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={2} z={94} w={34} d={11} h={29} topFill="#93c5fd" rightFill="#60a5fa" leftFill="#2563eb" strokeWidth={1.5} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-16} y={14} z={94} w={34} d={10} h={26} topFill="#ddd6fe" rightFill="#c4b5fd" leftFill="#8b5cf6" strokeWidth={1.5} />
+            {/* Steel L-Shaped Bookend */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-10} y={25} z={94} w={24} d={3} h={20} topFill="#e4e4e7" rightFill="#a1a1aa" leftFill="#71717a" strokeWidth={1.3} />
+            <IsoBox ox={O1_X} oy={O1_Y} x={-10} y={28} z={94} w={24} d={8} h={3} topFill="#e4e4e7" rightFill="#a1a1aa" leftFill="#71717a" strokeWidth={1.3} />
+
+            {/* Spine detail ticks on top & bottom books */}
+            {[-30, -18, -6, 7, 19].map((by) => {
+              const [s1x, s1y] = isoAt(O1_X, O1_Y, 18.2, by, 114);
+              const [s2x, s2y] = isoAt(O1_X, O1_Y, 18.2, by + 5, 114);
+              const [b1x, b1y] = isoAt(O1_X, O1_Y, 18.2, by, 28);
+              const [b2x, b2y] = isoAt(O1_X, O1_Y, 18.2, by + 5, 28);
+              return (
+                <g key={by} stroke="#111111" strokeWidth={1.2}>
+                  <line x1={s1x} y1={s1y} x2={s2x} y2={s2y} />
+                  <line x1={b1x} y1={b1y} x2={b2x} y2={b2y} />
+                </g>
+              );
+            })}
+
+            {/* Near Side Wall (+y, front-left face) */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-18} y={38} z={0} w={42} d={6} h={132} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={2} />
+
+            {/* Dewey Plaque + Status LED on near-left cabinet wall */}
+            <polygon
+              points={ptsAt(O1_X, O1_Y, [
+                [-8, 44.3, 102],
+                [14, 44.3, 102],
+                [14, 44.3, 118],
+                [-8, 44.3, 118],
               ])}
               fill="#ffffff"
               stroke="#111111"
               strokeWidth={1.4}
             />
             <polygon
-              points={pts([
-                [48.4, -10, 119],
-                [48.4, 16, 119],
-                [48.4, 16, 124],
-                [48.4, -10, 124],
+              points={ptsAt(O1_X, O1_Y, [
+                [-8, 44.4, 113],
+                [14, 44.4, 113],
+                [14, 44.4, 118],
+                [-8, 44.4, 118],
               ])}
-              fill="#facc15"
+              fill="#86efac"
               stroke="#111111"
               strokeWidth={1.1}
             />
-            {[112, 115.5].map((dz) => {
-              const [x1, y1] = iso(48.5, -6, dz);
-              const [x2, y2] = iso(48.5, 12, dz);
-              return <line key={dz} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.1} />;
-            })}
+            {(() => {
+              const [lx, ly] = isoAt(O1_X, O1_Y, 18, 44.5, 66);
+              return (
+                <circle
+                  cx={lx}
+                  cy={ly}
+                  r={3.5}
+                  fill={isStage01 ? "#86efac" : "#e4e4e7"}
+                  stroke="#111111"
+                  strokeWidth={1.3}
+                />
+              );
+            })()}
 
-            {/* Top Cornice Crown */}
-            <IsoBox x={-60} y={-26} z={140} w={110} d={54} h={8} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={2} />
-          </g>
-
-          {/* LAYER 3 (FRONT): PROTECTIVE GLASS DOOR FRAME & FRONT RETAINING RAIL */}
-          <motion.g
-            animate={exploded ? { x: -50, y: 20 } : { x: 0, y: 0 }}
-            transition={springExplode}
-            className="pointer-events-none"
-          >
-            {/* Translucent protective glass pane */}
-            <polygon
-              points={pts([
-                [-52, 26.5, 10],
-                [42, 26.5, 10],
-                [42, 26.5, 138],
-                [-52, 26.5, 138],
-              ])}
-              fill="#e0f2fe"
-              fillOpacity={exploded ? "0.34" : "0.14"}
-              stroke="#111111"
-              strokeWidth={1.6}
-            />
-            {/* Crisp diagonal glass reflections */}
-            <line
-              x1={iso(-42, 26.8, 128)[0]}
-              y1={iso(-42, 26.8, 128)[1]}
-              x2={iso(-14, 26.8, 104)[0]}
-              y2={iso(-14, 26.8, 104)[1]}
-              stroke="#ffffff"
-              strokeWidth={2.2}
-              strokeOpacity="0.85"
-            />
-            <line
-              x1={iso(-36, 26.8, 114)[0]}
-              y1={iso(-36, 26.8, 114)[1]}
-              x2={iso(-22, 26.8, 102)[0]}
-              y2={iso(-22, 26.8, 102)[1]}
-              stroke="#ffffff"
-              strokeWidth={1.4}
-              strokeOpacity="0.7"
-            />
-            {/* Brass corner latches & front lower guard rail */}
-            <IsoBox x={-54} y={26} z={6} w={98} d={4} h={5} topFill="#facc15" rightFill="#ca8a04" leftFill="#eab308" strokeWidth={1.4} />
-            <IsoBox x={36} y={26} z={68} w={6} d={5} h={14} topFill="#e4e4e7" rightFill="#71717a" leftFill="#a1a1aa" strokeWidth={1.3} />
+            {/* Top Cornice Cap */}
+            <IsoBox ox={O1_X} oy={O1_Y} x={-26} y={-46} z={132} w={52} d={92} h={7} topFill="#fef9c3" rightFill="#eab308" leftFill="#f5f0dc" strokeWidth={2} />
           </motion.g>
 
-          {/* TECHNICAL LEADER LINES & CALLOUT BADGES */}
-          {/* [01] CODEX SHELF (Top Left) */}
+          {/* ========================================================================
+              OBJECT 2: [02] ~3K OPEN BOOK — Reading Lectern + Wide-Open Physical Book
+              Standalone in center-front (x ~ 350..515), >= 50px gap from Shelf & Dock
+             ======================================================================== */}
+          <motion.g
+            animate={exploded ? { x: 0, y: 18 } : { x: 0, y: 0 }}
+            transition={springExplode}
+            role="button"
+            tabIndex={0}
+            aria-label="Tahap 02 3K Open Book: buku fisik terbuka lebar di atas meja baca dengan pemindai baris teks 3.000 karakter"
+            aria-pressed={selectedStage === "02"}
+            onClick={() => setSelectedStage("02")}
+            onMouseEnter={() => setHoverStage("02")}
+            onMouseLeave={() => setHoverStage(null)}
+            onKeyDown={handleSvgStageKeyDown("02")}
+            className="cursor-pointer focus:outline-none"
+          >
+            {/* Ground shadow under reading lectern */}
+            <polygon
+              points={ptsAt(O2_X, O2_Y, [
+                [-54, -42, -8],
+                [54, -42, -8],
+                [54, 42, -8],
+                [-54, 42, -8],
+              ])}
+              fill="#111111"
+              fillOpacity="0.12"
+            />
+
+            {/* Four low rubber lectern feet */}
+            <IsoBox ox={O2_X} oy={O2_Y} x={-50} y={-38} z={-6} w={9} d={9} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O2_X} oy={O2_Y} x={41} y={-38} z={-6} w={9} d={9} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O2_X} oy={O2_Y} x={-50} y={29} z={-6} w={9} d={9} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O2_X} oy={O2_Y} x={41} y={29} z={-6} w={9} d={9} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+
+            {/* Low Reading Lectern Base Deck */}
+            <IsoBox
+              ox={O2_X}
+              oy={O2_Y}
+              x={-52}
+              y={-40}
+              z={0}
+              w={104}
+              d={80}
+              h={12}
+              topFill="#f5f0dc"
+              rightFill="#d6cfc2"
+              leftFill="#e5e5df"
+              strokeWidth={2}
+            />
+
+            {/* Lectern status LED on front lip */}
+            {(() => {
+              const [lx, ly] = isoAt(O2_X, O2_Y, -38, 40.3, 6);
+              return (
+                <circle
+                  cx={lx}
+                  cy={ly}
+                  r={3.2}
+                  fill={isStage02 ? "#facc15" : "#e4e4e7"}
+                  stroke="#111111"
+                  strokeWidth={1.25}
+                />
+              );
+            })()}
+
+            {/* OPEN BOOK ASSEMBLY (lifts lightly when Stage 02 active) */}
+            <motion.g animate={isStage02 ? { y: -6 } : { y: 0 }} transition={springPart}>
+              {/* Layer A: Yellow Splayed Outer Hardcover Boards (#facc15) */}
+              <IsoBox
+                ox={O2_X}
+                oy={O2_Y}
+                x={-50}
+                y={-37}
+                z={12}
+                w={49}
+                d={74}
+                h={4}
+                topFill="#facc15"
+                rightFill="#ca8a04"
+                leftFill="#eab308"
+                strokeWidth={1.8}
+              />
+              <IsoBox
+                ox={O2_X}
+                oy={O2_Y}
+                x={1}
+                y={-37}
+                z={12}
+                w={49}
+                d={74}
+                h={4}
+                topFill="#facc15"
+                rightFill="#ca8a04"
+                leftFill="#eab308"
+                strokeWidth={1.8}
+              />
+              {/* Dark Book Spine Hinge between covers */}
+              <IsoBox
+                ox={O2_X}
+                oy={O2_Y}
+                x={-2}
+                y={-37}
+                z={11}
+                w={4}
+                d={74}
+                h={5}
+                topFill="#27272a"
+                rightFill="#111111"
+                leftFill="#18181b"
+                strokeWidth={1.4}
+              />
+
+              {/* Layer B: Curved White Open Book Pages (lifts off covers in Explode View!) */}
+              <motion.g animate={exploded ? { y: -16 } : { y: 0 }} transition={springExplode}>
+                {/* Layered Page Block Thickness Edges */}
+                <path d={leftPageFrontEdge} fill="#e4e4e7" stroke="#111111" strokeWidth={1.6} strokeLinejoin="round" />
+                <path d={rightPageFrontEdge} fill="#f4f4f5" stroke="#111111" strokeWidth={1.6} strokeLinejoin="round" />
+                <path d={rightPageSideEdge} fill="#d4d4d8" stroke="#111111" strokeWidth={1.6} strokeLinejoin="round" />
+
+                {/* Left & Right Arched Open White Pages */}
+                <path d={leftPageTopPath} fill="#ffffff" stroke="#111111" strokeWidth={2} strokeLinejoin="round" />
+                <path d={rightPageTopPath} fill="#ffffff" stroke="#111111" strokeWidth={2} strokeLinejoin="round" />
+
+                {/* Printed Text Rule Lines on Left Page */}
+                {[-24, -15, -6, 3, 12, 21].map((ty, idx) => {
+                  const [x1, y1] = p(-38, ty, 27.5);
+                  const [x2, y2] = p(idx === 5 ? -18 : -8, ty, 29.5);
+                  return <line key={`L-${ty}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.3} strokeLinecap="round" />;
+                })}
+
+                {/* Highlighted ~3K Chunk Band + Printed Text Lines on Right Page */}
+                <polygon
+                  points={ptsAt(O2_X, O2_Y, [
+                    [8, -10, 29.5],
+                    [39, -10, 27.5],
+                    [39, 10, 27.5],
+                    [8, 10, 29.5],
+                  ])}
+                  fill={isStage02 ? "#bbf7d0" : "#fef08a"}
+                  fillOpacity="0.8"
+                />
+                {[-24, -15, -6, 3, 12, 21].map((ty, idx) => {
+                  const [x1, y1] = p(9, ty, 29.5);
+                  const [x2, y2] = p(idx === 0 ? 28 : 38, ty, 27.5);
+                  return <line key={`R-${ty}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.3} strokeLinecap="round" />;
+                })}
+
+                {/* Coral/Lilac Bookmark Ribbon peeking from bottom gutter */}
+                <polygon
+                  points={ptsAt(O2_X, O2_Y, [
+                    [-2, 34, 24],
+                    [3, 34, 24],
+                    [3, 44, 11],
+                    [-2, 44, 11],
+                  ])}
+                  fill="#c4b5fd"
+                  stroke="#111111"
+                  strokeWidth={1.4}
+                />
+              </motion.g>
+
+              {/* Layer C: Bright Yellow/Mint Optical Scanner Bar sliding smoothly over right page */}
+              <motion.g
+                animate={
+                  exploded
+                    ? { x: 0, y: -32 }
+                    : isStage02
+                      ? { x: -12, y: 12 }
+                      : { x: 0, y: 0 }
+                }
+                transition={springPart}
+              >
+                <IsoBox
+                  ox={O2_X}
+                  oy={O2_Y}
+                  x={6}
+                  y={-20}
+                  z={32}
+                  w={36}
+                  d={9}
+                  h={6}
+                  topFill={isStage02 ? "#86efac" : "#facc15"}
+                  rightFill={isStage02 ? "#16a34a" : "#ca8a04"}
+                  leftFill={isStage02 ? "#4ade80" : "#eab308"}
+                  strokeWidth={1.75}
+                />
+              </motion.g>
+            </motion.g>
+          </motion.g>
+
+          {/* ========================================================================
+              OBJECT 3: [03] LILAC CARTRIDGE — Standalone Cartridge Dock (Right, x ~ 580..710)
+             ======================================================================== */}
+          <motion.g
+            animate={exploded ? { x: 24, y: 14 } : { x: 0, y: 0 }}
+            transition={springExplode}
+            role="button"
+            tabIndex={0}
+            aria-label="Tahap 03 Lilac Cartridge: dok pengisian kaset ungu GITBOY-01 yang berdiri mandiri"
+            aria-pressed={selectedStage === "03"}
+            onClick={() => setSelectedStage("03")}
+            onMouseEnter={() => setHoverStage("03")}
+            onMouseLeave={() => setHoverStage(null)}
+            onKeyDown={handleSvgStageKeyDown("03")}
+            className="cursor-pointer focus:outline-none"
+          >
+            {/* Ground shadow under dock */}
+            <polygon
+              points={ptsAt(O3_X, O3_Y, [
+                [-34, -30, -8],
+                [36, -30, -8],
+                [36, 32, -8],
+                [-34, 32, -8],
+              ])}
+              fill="#111111"
+              fillOpacity="0.12"
+            />
+
+            {/* Dock rubber feet */}
+            <IsoBox ox={O3_X} oy={O3_Y} x={-30} y={-26} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O3_X} oy={O3_Y} x={22} y={-26} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O3_X} oy={O3_Y} x={-30} y={18} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+            <IsoBox ox={O3_X} oy={O3_Y} x={22} y={18} z={-6} w={8} d={8} h={6} topFill="#27272a" rightFill="#111111" leftFill="#18181b" strokeWidth={1.3} />
+
+            {/* Dark Matte Dock Housing */}
+            <IsoBox
+              ox={O3_X}
+              oy={O3_Y}
+              x={-32}
+              y={-28}
+              z={0}
+              w={64}
+              d={56}
+              h={28}
+              topFill="#27272a"
+              rightFill="#111111"
+              leftFill="#18181b"
+              strokeWidth={2}
+            />
+
+            {/* Recessed Slot Channel on top of dock */}
+            <polygon
+              points={ptsAt(O3_X, O3_Y, [
+                [-24, -16, 28.2],
+                [24, -16, 28.2],
+                [24, 16, 28.2],
+                [-24, 16, 28.2],
+              ])}
+              fill="#09090b"
+              stroke="#111111"
+              strokeWidth={1.4}
+            />
+
+            {/* 5 Gold Edge Connector Fingers inside dock slot */}
+            {[-16, -8, 0, 8, 16].map((gx) => (
+              <IsoBox
+                key={gx}
+                ox={O3_X}
+                oy={O3_Y}
+                x={gx - 2}
+                y={-10}
+                z={28}
+                w={4}
+                d={20}
+                h={4}
+                topFill="#facc15"
+                rightFill="#ca8a04"
+                leftFill="#eab308"
+                strokeWidth={1}
+              />
+            ))}
+
+            {/* Glowing LED Indicator on Dock Top-Front */}
+            {(() => {
+              const [lx, ly] = isoAt(O3_X, O3_Y, 22, 20, 28.4);
+              return (
+                <circle
+                  cx={lx}
+                  cy={ly}
+                  r={4}
+                  fill={isStage03 ? "#86efac" : telemetry.activeMaterialsCount > 0 ? "#c4b5fd" : "#52525b"}
+                  stroke="#111111"
+                  strokeWidth={1.3}
+                />
+              );
+            })()}
+
+            {/* Coral Eject Switch on Front of Dock */}
+            <IsoBox ox={O3_X} oy={O3_Y} x={-8} y={28} z={7} w={16} d={6} h={10} topFill="#fb7185" rightFill="#e11d48" leftFill="#f43f5e" strokeWidth={1.4} />
+
+            {/* Sliding Lilac GITBOY-01 Cartridge (lifts -14 on Stage 03, -26 on Explode) */}
+            <motion.g
+              animate={exploded ? { y: -26 } : isStage03 ? { y: -14 } : { y: 0 }}
+              transition={springPart}
+            >
+              <IsoBox
+                ox={O3_X}
+                oy={O3_Y}
+                x={-22}
+                y={-15}
+                z={28}
+                w={44}
+                d={30}
+                h={42}
+                topFill="#c4b5fd"
+                rightFill="#8b5cf6"
+                leftFill="#a78bfa"
+                strokeWidth={2}
+              />
+
+              {/* Top grip ribs on cartridge */}
+              {[-9, -3, 3].map((dy) => {
+                const [x1, y1] = isoAt(O3_X, O3_Y, -17, dy, 70.2);
+                const [x2, y2] = isoAt(O3_X, O3_Y, 17, dy, 70.2);
+                return <line key={dy} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.4} />;
+              })}
+
+              {/* Front-left sticker decal on cartridge */}
+              <polygon
+                points={ptsAt(O3_X, O3_Y, [
+                  [-16, 15.2, 35],
+                  [16, 15.2, 35],
+                  [16, 15.2, 62],
+                  [-16, 15.2, 62],
+                ])}
+                fill="#ffffff"
+                stroke="#111111"
+                strokeWidth={1.5}
+              />
+              <polygon
+                points={ptsAt(O3_X, O3_Y, [
+                  [-16, 15.3, 55],
+                  [16, 15.3, 55],
+                  [16, 15.3, 62],
+                  [-16, 15.3, 62],
+                ])}
+                fill="#facc15"
+                stroke="#111111"
+                strokeWidth={1.2}
+              />
+              {[42, 48].map((lz) => {
+                const [x1, y1] = isoAt(O3_X, O3_Y, -11, 15.4, lz);
+                const [x2, y2] = isoAt(O3_X, O3_Y, 11, 15.4, lz);
+                return <line key={lz} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#111111" strokeWidth={1.3} />;
+              })}
+            </motion.g>
+          </motion.g>
+
+          {/* ========================================================================
+              ANTI-COLLISION CALLOUT BADGES & LEADER LINES (Zero object crossings!)
+             ======================================================================== */}
+          {/* [01] CODEX SHELF (Top-Left x=36, y=34 -> clean corridor straight to Hero Mint Book) */}
           <g
             role="button"
             tabIndex={0}
@@ -724,30 +898,30 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
             onKeyDown={handleSvgStageKeyDown("01")}
             className="cursor-pointer focus:outline-none"
           >
-            <polyline points="154,50 198,50 222,102" fill="none" stroke="#111111" strokeWidth={1.7} />
-            <circle cx={222} cy={102} r={3.8} fill="#86efac" stroke="#111111" strokeWidth={1.6} />
+            <polyline points="208,54 282,54 282,212 246,212" fill="none" stroke="#111111" strokeWidth={1.8} />
+            <circle cx={246} cy={212} r={4.2} fill="#86efac" stroke="#111111" strokeWidth={1.7} />
             <rect
-              x={10}
-              y={30}
-              width={144}
-              height={38}
+              x={36}
+              y={34}
+              width={172}
+              height={40}
               fill={selectedStage === "01" ? "#86efac" : "#ffffff"}
               stroke="#111111"
               strokeWidth={2}
             />
-            <text x={18} y={45} fill="#111111" fontSize="8.5" fontWeight="900" fontFamily="monospace">
+            <text x={46} y={50} fill="#111111" fontSize="10.5" fontWeight="900" fontFamily="monospace">
               [01] CODEX SHELF
             </text>
-            <text x={18} y={59} fill="#111111" fontSize="7.5" fontWeight="700" fontFamily="monospace">
+            <text x={46} y={65} fill="#111111" fontSize="9" fontWeight="700" fontFamily="monospace">
               {telemetry.totalMaterialsCount} FILE · {charsK}
             </text>
           </g>
 
-          {/* [02] ~3K PAGE INDEXER (Top Right) */}
+          {/* [02] ~3K OPEN BOOK (Top-Center x=325, y=24 -> straight vertical drop onto open pages) */}
           <g
             role="button"
             tabIndex={0}
-            aria-label="Pilih detail Tahap 02 3K Page Indexer"
+            aria-label="Pilih detail Tahap 02 3K Open Book"
             aria-pressed={selectedStage === "02"}
             onClick={() => setSelectedStage("02")}
             onMouseEnter={() => setHoverStage("02")}
@@ -755,30 +929,30 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
             onKeyDown={handleSvgStageKeyDown("02")}
             className="cursor-pointer focus:outline-none"
           >
-            <polyline points="396,50 344,50 272,162" fill="none" stroke="#111111" strokeWidth={1.7} />
-            <circle cx={272} cy={162} r={3.8} fill="#facc15" stroke="#111111" strokeWidth={1.6} />
+            <polyline points="432,64 432,232" fill="none" stroke="#111111" strokeWidth={1.8} />
+            <circle cx={432} cy={232} r={4.2} fill="#facc15" stroke="#111111" strokeWidth={1.7} />
             <rect
-              x={396}
-              y={30}
-              width={154}
-              height={38}
+              x={338}
+              y={24}
+              width={188}
+              height={40}
               fill={selectedStage === "02" ? "#facc15" : "#ffffff"}
               stroke="#111111"
               strokeWidth={2}
             />
-            <text x={404} y={45} fill="#111111" fontSize="8.5" fontWeight="900" fontFamily="monospace">
-              [02] ~3K PAGE INDEXER
+            <text x={348} y={40} fill="#111111" fontSize="10.5" fontWeight="900" fontFamily="monospace">
+              [02] ~3K OPEN BOOK
             </text>
-            <text x={404} y={59} fill="#111111" fontSize="7.5" fontWeight="700" fontFamily="monospace">
+            <text x={348} y={55} fill="#111111" fontSize="9" fontWeight="700" fontFamily="monospace">
               {telemetry.totalChunks} CHUNKS · SLICER
             </text>
           </g>
 
-          {/* [03] LILAC CARTRIDGE BAY (Bottom Right) */}
+          {/* [03] LILAC CARTRIDGE (Top-Right x=585, y=44 -> straight vertical drop onto Lilac Cartridge) */}
           <g
             role="button"
             tabIndex={0}
-            aria-label="Pilih detail Tahap 03 Lilac Cartridge Bay"
+            aria-label="Pilih detail Tahap 03 Lilac Cartridge"
             aria-pressed={selectedStage === "03"}
             onClick={() => setSelectedStage("03")}
             onMouseEnter={() => setHoverStage("03")}
@@ -786,21 +960,21 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
             onKeyDown={handleSvgStageKeyDown("03")}
             className="cursor-pointer focus:outline-none"
           >
-            <polyline points="392,314 366,314 336,266" fill="none" stroke="#111111" strokeWidth={1.7} />
-            <circle cx={336} cy={266} r={3.8} fill="#c4b5fd" stroke="#111111" strokeWidth={1.6} />
+            <polyline points="646,84 646,204" fill="none" stroke="#111111" strokeWidth={1.8} />
+            <circle cx={646} cy={204} r={4.2} fill="#c4b5fd" stroke="#111111" strokeWidth={1.7} />
             <rect
-              x={392}
-              y={294}
-              width={158}
-              height={38}
+              x={585}
+              y={44}
+              width={198}
+              height={40}
               fill={selectedStage === "03" ? "#c4b5fd" : "#ffffff"}
               stroke="#111111"
               strokeWidth={2}
             />
-            <text x={400} y={309} fill="#111111" fontSize="8.5" fontWeight="900" fontFamily="monospace">
+            <text x={595} y={60} fill="#111111" fontSize="10.5" fontWeight="900" fontFamily="monospace">
               [03] LILAC CARTRIDGE
             </text>
-            <text x={400} y={323} fill="#111111" fontSize="7.5" fontWeight="700" fontFamily="monospace">
+            <text x={595} y={75} fill="#111111" fontSize="9" fontWeight="700" fontFamily="monospace">
               GITBOY-01 · {activeBab}
             </text>
           </g>
@@ -816,7 +990,7 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
         {(
           [
             { id: "01", short: "01 SHELF", activeBg: "bg-[#86efac]" },
-            { id: "02", short: "02 INDEXER", activeBg: "bg-[#facc15]" },
+            { id: "02", short: "02 OPEN BOOK", activeBg: "bg-[#facc15]" },
             { id: "03", short: "03 CARTRIDGE", activeBg: "bg-[#c4b5fd]" },
           ] as const
         ).map((tab) => {
@@ -865,12 +1039,12 @@ export function KnowledgeChunkerFigure({ telemetry }: KnowledgeChunkerFigureProp
           <span className="inline-flex items-center gap-1">
             <span className="h-2.5 w-2.5 border border-[#111111] bg-[#facc15]" aria-hidden="true" />
             <ScanLine className="h-3 w-3" aria-hidden="true" />
-            ~3K Indexer
+            ~3K Open Book
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="h-2.5 w-2.5 border border-[#111111] bg-[#c4b5fd]" aria-hidden="true" />
             <Cpu className="h-3 w-3" aria-hidden="true" />
-            Cartridge Bay
+            Lilac Cartridge
           </span>
         </div>
 
