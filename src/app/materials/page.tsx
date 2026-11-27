@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
@@ -13,7 +14,11 @@ import {
   AlertCircle,
   RotateCcw,
   Sparkles,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
+import { splitIntoStudyChunks } from "@/lib/chunkText";
 import { KnowledgeChunkerFigure } from "@/components/figures/knowledge-chunker/KnowledgeChunkerFigure";
 
 interface StudyMaterialItem {
@@ -37,6 +42,18 @@ export default function MaterialsPage() {
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [editingItem, setEditingItem] = useState<StudyMaterialItem | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editChunkPos, setEditChunkPos] = useState(1);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const editTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const editDialogRef = useRef<HTMLDivElement | null>(null);
+  const editTitleInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadMaterials = useCallback(async () => {
     try {
@@ -179,6 +196,124 @@ export default function MaterialsPage() {
     const res = await fetch(`/api/materials/${id}`, { method: "DELETE" });
     if (res.ok) {
       setMaterials((prev) => prev.filter((m) => m.id !== id));
+    }
+  }
+
+  const closeEditModal = useCallback(() => {
+    setEditingItem(null);
+    setEditError(null);
+    setEditLoading(false);
+    setEditSaving(false);
+    requestAnimationFrame(() => {
+      editTriggerRef.current?.focus();
+    });
+  }, []);
+
+  async function openEditModal(item: StudyMaterialItem, triggerEl: HTMLButtonElement) {
+    editTriggerRef.current = triggerEl;
+    setEditingItem(item);
+    setEditTitle(item.title);
+    setEditContent("");
+    setEditChunkPos((item.currentChunkIndex % Math.max(item.totalChunks, 1)) + 1);
+    setEditError(null);
+    setEditLoading(true);
+
+    try {
+      const res = await fetch(`/api/materials/${item.id}`);
+      const data = (await res.json()) as {
+        material?: StudyMaterialItem & { content: string };
+        error?: string;
+      };
+      if (!res.ok || !data.material) {
+        setEditError(data.error || "Gagal memuat isi materi.");
+        return;
+      }
+      setEditTitle(data.material.title);
+      setEditContent(data.material.content);
+      setEditChunkPos((data.material.currentChunkIndex % Math.max(data.material.totalChunks, 1)) + 1);
+    } catch {
+      setEditError("Kesalahan jaringan saat memuat detail materi.");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  const estimatedEditChunks = useMemo(() => {
+    const trimmed = editContent.trim();
+    if (!trimmed) return Math.max(editingItem?.totalChunks ?? 1, 1);
+    return Math.max(1, splitIntoStudyChunks(trimmed, 3000, 3500).length);
+  }, [editContent, editingItem]);
+
+  useEffect(() => {
+    if (!editingItem) return;
+
+    const frame = requestAnimationFrame(() => {
+      editTitleInputRef.current?.focus();
+    });
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeEditModal();
+        return;
+      }
+      if (e.key === "Tab" && editDialogRef.current) {
+        const focusables = editDialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [editingItem, closeEditModal]);
+
+  async function handleSaveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingItem || editLoading) return;
+
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const clampedChunkIdx = Math.min(Math.max(0, estimatedEditChunks - 1), Math.max(0, editChunkPos - 1));
+      const res = await fetch(`/api/materials/${editingItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          currentChunkIndex: clampedChunkIdx,
+        }),
+      });
+      const data = (await res.json()) as { material?: StudyMaterialItem; error?: string };
+      if (!res.ok || !data.material) {
+        setEditError(data.error || "Gagal menyimpan perubahan materi.");
+        return;
+      }
+
+      setMaterials((prev) => prev.map((m) => (m.id === data.material!.id ? data.material! : m)));
+      setAlert({
+        type: "success",
+        text: `Materi "${data.material.title}" diperbarui (${data.material.totalChunks} chunk, posisi Chunk ${(data.material.currentChunkIndex % Math.max(data.material.totalChunks, 1)) + 1}).`,
+      });
+      closeEditModal();
+    } catch {
+      setEditError("Kesalahan jaringan saat menyimpan perubahan.");
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -388,7 +523,18 @@ export default function MaterialsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => void openEditModal(m, e.currentTarget)}
+                        title="Edit materi"
+                        aria-label={`Edit materi ${m.title}`}
+                        className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 bg-[#FFD23F] px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black sm:min-h-[34px]"
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        <span>Edit</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleResetProgress(m)}
@@ -427,6 +573,186 @@ export default function MaterialsPage() {
           )}
         </section>
       </main>
+
+      <AnimatePresence>
+        {editingItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeEditModal();
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 overscroll-contain"
+          >
+            <motion.div
+              ref={editDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-material-title"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden border-4 border-black bg-[#FFFDF5] shadow-[10px_10px_0_0_#000] overscroll-contain"
+            >
+              <div className="flex items-center justify-between gap-3 border-b-3 border-black bg-[#FFD23F] px-4 py-3.5 sm:px-5">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-black bg-black text-[#FFD23F]">
+                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3
+                      id="edit-material-title"
+                      className="truncate font-mono text-sm font-extrabold uppercase text-black"
+                    >
+                      EDIT MATERI — {editingItem.sourceType}
+                    </h3>
+                    <p className="text-xs font-bold text-black/80">
+                      Ubah judul, posisi chunk aktif, atau isi teks materi (Esc untuk tutup).
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  aria-label="Tutup modal edit materi"
+                  className="nb-btn-sm inline-flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center bg-white text-black sm:min-h-[34px] sm:min-w-[34px]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="flex-1 space-y-4 overflow-y-auto p-4 overscroll-contain sm:p-5">
+                  {editError && (
+                    <div
+                      role="alert"
+                      className="flex items-center gap-2 border-2 border-black bg-[#FF6B6B] px-3.5 py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0_0_#000]"
+                    >
+                      <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>{editError}</span>
+                    </div>
+                  )}
+
+                  {editLoading ? (
+                    <div className="flex items-center justify-center py-16 text-xs font-bold text-black">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                      Memuat isi materi...
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid gap-3.5 sm:grid-cols-3">
+                        <div className="sm:col-span-2">
+                          <label
+                            htmlFor="edit-mat-title"
+                            className="mb-1.5 flex items-center justify-between text-xs font-extrabold uppercase text-black"
+                          >
+                            <span>Judul Materi</span>
+                            <span className="font-mono text-[10px] font-bold text-black/65">
+                              {editTitle.length}/160
+                            </span>
+                          </label>
+                          <input
+                            ref={editTitleInputRef}
+                            id="edit-mat-title"
+                            type="text"
+                            required
+                            maxLength={160}
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Judul materi belajar..."
+                            className="nb-input w-full px-3.5 py-2.5 text-base font-bold placeholder-black/65 sm:text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="edit-mat-chunk"
+                            className="mb-1.5 block text-xs font-extrabold uppercase text-black"
+                          >
+                            Chunk Aktif (1–{estimatedEditChunks})
+                          </label>
+                          <input
+                            id="edit-mat-chunk"
+                            type="number"
+                            required
+                            min={1}
+                            max={estimatedEditChunks}
+                            value={editChunkPos}
+                            onChange={(e) => {
+                              const parsed = Number.parseInt(e.target.value, 10);
+                              setEditChunkPos(Number.isNaN(parsed) ? 1 : parsed);
+                            }}
+                            className="nb-input w-full px-3.5 py-2.5 font-mono text-base font-bold sm:text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                          <label htmlFor="edit-mat-content" className="text-xs font-extrabold uppercase text-black">
+                            Isi Materi ({editContent.length.toLocaleString("id-ID")} / 400.000 karakter)
+                          </label>
+                          <span
+                            className={`border-2 border-black px-2 py-0.5 font-mono text-[10px] font-extrabold ${
+                              estimatedEditChunks > 150 || editContent.length > 400_000
+                                ? "bg-[#FF6B6B] text-black"
+                                : "bg-[#B8A9FA] text-black"
+                            }`}
+                          >
+                            ESTIMASI: {estimatedEditChunks} CHUNK
+                          </span>
+                        </div>
+                        <textarea
+                          id="edit-mat-content"
+                          required
+                          rows={10}
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          placeholder="Isi teks materi belajar..."
+                          className="nb-input w-full p-3.5 font-mono text-base font-medium placeholder-black/65 overscroll-contain sm:text-xs"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-col-reverse gap-2.5 border-t-3 border-black bg-[#F5F0E8] px-4 py-3.5 sm:flex-row sm:justify-end sm:px-5">
+                  <button
+                    type="button"
+                    onClick={closeEditModal}
+                    className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center justify-center bg-white px-5 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[40px]"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      editLoading ||
+                      editSaving ||
+                      !editTitle.trim() ||
+                      !editContent.trim() ||
+                      editContent.length > 400_000 ||
+                      estimatedEditChunks > 150
+                    }
+                    className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 bg-[#88D498] px-5 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[40px]"
+                  >
+                    {editSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Save className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    <span>{editSaving ? "Menyimpan..." : "Simpan Perubahan"}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

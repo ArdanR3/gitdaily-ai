@@ -122,6 +122,18 @@ test.describe("GitDaily AI — V2 Regression Suite", () => {
     await expect(svgStageBtn).toHaveAttribute("tabindex", "0");
     await expect(svgStageBtn).toHaveAttribute("aria-label", /.+/);
 
+    // Verify Edit Material modal opens, loads content, and closes with Escape
+    const firstEditBtn = page.getByRole("button", { name: /^Edit materi /i }).first();
+    if ((await firstEditBtn.count()) > 0) {
+      await firstEditBtn.click();
+      const editDialog = page.getByRole("dialog");
+      await expect(editDialog).toBeVisible();
+      await expect(editDialog.locator("#edit-mat-title")).not.toHaveValue("", { timeout: 10_000 });
+      await expect(editDialog.locator("#edit-mat-content")).not.toHaveValue("", { timeout: 10_000 });
+      await page.keyboard.press("Escape");
+      await expect(editDialog).toBeHidden();
+    }
+
     // /settings: verify BRANCH_PR mode option is rendered
     await page.goto("/settings", { waitUntil: "networkidle" });
     await expect(page.getByText(/Branch \+ Pull Request/i)).toBeVisible();
