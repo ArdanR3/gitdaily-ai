@@ -181,7 +181,7 @@ export function QuestRoadmapTrack({
           <button
             type="button"
             onClick={fireConfetti}
-            className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#88D498] px-3 py-1.5 font-mono text-xs font-extrabold uppercase text-black"
+            className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#88D498] px-3 py-1.5 font-mono text-xs font-extrabold uppercase text-black sm:min-h-[34px]"
           >
             <PartyPopper className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Celebrate!</span>
@@ -402,7 +402,7 @@ export function QuestRoadmapTrack({
                 <button
                   type="button"
                   onClick={onQuickSync}
-                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#74B9FF] px-3.5 py-2 text-xs font-extrabold uppercase text-black"
+                  className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#74B9FF] px-3.5 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[36px]"
                 >
                   <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                   Sync Sekarang
@@ -411,7 +411,7 @@ export function QuestRoadmapTrack({
               {activeDetail.id === "02" && (
                 <Link
                   href="/materials"
-                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-3.5 py-2 text-xs font-extrabold uppercase text-black"
+                  className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-3.5 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[36px]"
                 >
                   Kelola Materials
                   <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -421,7 +421,7 @@ export function QuestRoadmapTrack({
                 <button
                   type="button"
                   onClick={onQuickGenerate}
-                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3.5 py-2 text-xs font-extrabold uppercase text-black"
+                  className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3.5 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[36px]"
                 >
                   <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   Generate Quest
@@ -431,7 +431,7 @@ export function QuestRoadmapTrack({
                 <button
                   type="button"
                   onClick={fireConfetti}
-                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#88D498] px-3.5 py-2 text-xs font-extrabold uppercase text-black"
+                  className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#88D498] px-3.5 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[36px]"
                 >
                   <PartyPopper className="h-3.5 w-3.5" aria-hidden="true" />
                   Pop Confetti

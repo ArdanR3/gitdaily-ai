@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Sparkles,
 } from "lucide-react";
+import { KnowledgeChunkerFigure } from "@/components/figures/knowledge-chunker/KnowledgeChunkerFigure";
 
 interface StudyMaterialItem {
   id: number;
@@ -181,17 +182,20 @@ export default function MaterialsPage() {
     }
   }
 
-  const activeCount = materials.filter((m) => m.isActive).length;
+  const activeMaterials = materials.filter((m) => m.isActive);
+  const activeCount = activeMaterials.length;
+  const totalChunks = materials.reduce((acc, m) => acc + m.totalChunks, 0);
+  const totalChars = materials.reduce((acc, m) => acc + m.charCount, 0);
+  const primaryMaterial = activeMaterials[0] ?? materials[0] ?? null;
 
   return (
     <div className="nb-grid-bg min-h-screen">
-      {/* Bold Neubrutalist Lavender Header */}
       <header className="border-b-4 border-black bg-[#B8A9FA] text-black">
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Dashboard</span>
@@ -236,7 +240,24 @@ export default function MaterialsPage() {
           </div>
         )}
 
-        {/* Upload Form Card */}
+        <KnowledgeChunkerFigure
+          telemetry={{
+            activeMaterialsCount: activeCount,
+            totalMaterialsCount: materials.length,
+            totalChunks,
+            totalChars,
+            extracting,
+            primaryMaterial: primaryMaterial
+              ? {
+                  title: primaryMaterial.title,
+                  sourceType: primaryMaterial.sourceType,
+                  currentChunkIndex: primaryMaterial.currentChunkIndex,
+                  totalChunks: primaryMaterial.totalChunks,
+                }
+              : null,
+          }}
+        />
+
         <section className="nb-card p-5 sm:p-6">
           <h2 className="font-display text-base font-extrabold uppercase text-black">
             Tambah Materi Belajar (PDF / Kode / Catatan)
@@ -264,7 +285,7 @@ export default function MaterialsPage() {
 
               <div>
                 <span className="mb-1.5 block text-xs font-extrabold uppercase text-black">Upload File</span>
-                <label className="nb-btn-sm flex min-h-[42px] cursor-pointer items-center justify-center gap-2 bg-[#FFD23F] px-3 py-2 text-xs font-extrabold uppercase text-black">
+                <label className="nb-btn-sm flex min-h-[44px] cursor-pointer items-center justify-center gap-2 bg-[#FFD23F] px-3 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[42px]">
                   {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
                   <span>{extracting ? "Membaca..." : "Pilih PDF / TXT"}</span>
                   <input
@@ -373,7 +394,7 @@ export default function MaterialsPage() {
                         onClick={() => handleResetProgress(m)}
                         title="Ulangi dari Chunk 1"
                         aria-label={`Reset progress ${m.title}`}
-                        className="nb-btn-sm cursor-pointer bg-white p-2 text-black"
+                        className="nb-btn-sm inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center bg-white p-2 text-black sm:min-h-[34px] sm:min-w-[34px]"
                       >
                         <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
@@ -394,7 +415,7 @@ export default function MaterialsPage() {
                         onClick={() => handleDelete(m.id)}
                         title="Hapus materi"
                         aria-label={`Hapus materi ${m.title}`}
-                        className="nb-btn-sm cursor-pointer bg-[#FF6B6B] p-2 text-black"
+                        className="nb-btn-sm inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center bg-[#FF6B6B] p-2 text-black sm:min-h-[34px] sm:min-w-[34px]"
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>

@@ -8,6 +8,7 @@ import {
   UserCheck,
   ScrollText,
   GitCommitHorizontal,
+  GitPullRequest,
 } from "lucide-react";
 
 export interface ActivityLogItem {
@@ -18,6 +19,7 @@ export interface ActivityLogItem {
   commitMessage: string;
   commitSha: string | null;
   commitUrl: string | null;
+  prUrl?: string | null;
   triggeredBy: string;
   status: string;
   errorMessage: string | null;
@@ -114,16 +116,32 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
                     )}
                   </div>
 
-                  {log.commitUrl && (
-                    <a
-                      href={log.commitUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="nb-btn-sm inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 self-start bg-white px-3 py-1 font-mono text-[11px] font-extrabold text-black sm:min-h-[34px] sm:self-center"
-                    >
-                      <span>{log.commitSha ? log.commitSha.slice(0, 7) : "Commit"}</span>
-                      <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                    </a>
+                  {(log.prUrl || log.commitUrl) && (
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center">
+                      {log.prUrl && (
+                        <a
+                          href={log.prUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nb-btn-sm inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3 py-1 font-mono text-[11px] font-extrabold text-black sm:min-h-[34px]"
+                        >
+                          <GitPullRequest className="h-3 w-3" aria-hidden="true" />
+                          <span>PR</span>
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </a>
+                      )}
+                      {log.commitUrl && (
+                        <a
+                          href={log.commitUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nb-btn-sm inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 bg-white px-3 py-1 font-mono text-[11px] font-extrabold text-black sm:min-h-[34px]"
+                        >
+                          <span>{log.commitSha ? log.commitSha.slice(0, 7) : "Commit"}</span>
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
               </li>

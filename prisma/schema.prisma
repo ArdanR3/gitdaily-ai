@@ -11,6 +11,7 @@ datasource db {
 model AppSettings {
   id                  Int      @id @default(1)
   mode                String   @default("APPROVAL") // "APPROVAL" | "AUTOPILOT"
+  pushMode            String   @default("DIRECT_MAIN") // "DIRECT_MAIN" | "BRANCH_PR"
   morningCronTime     String   @default("08:00")    // HH:mm WIB
   autopilotCronTime   String   @default("21:00")    // HH:mm WIB
   timezone            String   @default("Asia/Jakarta")
@@ -60,6 +61,7 @@ model ActivityLog {
   commitMessage String
   commitSha     String?
   commitUrl     String?
+  prUrl         String?
   triggeredBy   String   // "MANUAL_APPROVAL" | "AUTOPILOT"
   status        String   // "SUCCESS" | "FAILED"
   errorMessage  String?

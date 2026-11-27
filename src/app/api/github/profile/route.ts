@@ -77,6 +77,7 @@ export async function GET() {
       statusToday: executedToday ? "DONE" : "PENDING",
       streak,
       mode: settings.mode,
+      pushMode: settings.pushMode,
       nextSchedule,
     });
   } catch (error) {

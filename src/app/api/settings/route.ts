@@ -19,6 +19,7 @@ export async function PATCH(request: Request) {
   try {
     const body = (await request.json()) as {
       mode?: "APPROVAL" | "AUTOPILOT";
+      pushMode?: "DIRECT_MAIN" | "BRANCH_PR";
       morningCronTime?: string;
       autopilotCronTime?: string;
       techPreferences?: string[];
@@ -28,6 +29,7 @@ export async function PATCH(request: Request) {
     const hhmmRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
     const data: Record<string, string> = {};
     if (body.mode === "APPROVAL" || body.mode === "AUTOPILOT") data.mode = body.mode;
+    if (body.pushMode === "DIRECT_MAIN" || body.pushMode === "BRANCH_PR") data.pushMode = body.pushMode;
     if (body.morningCronTime && hhmmRegex.test(body.morningCronTime)) {
       data.morningCronTime = body.morningCronTime;
     }

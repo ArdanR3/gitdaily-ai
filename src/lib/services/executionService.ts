@@ -1,11 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import { validateFilesForCommit } from "@/lib/dailyGuard";
-import { createRepositoryWithFiles, pushFilesToExistingRepo } from "@/lib/services/githubService";
+import {
+  createRepositoryWithFiles,
+  pushFilesToExistingRepo,
+  pushFilesViaBranchAndPR,
+} from "@/lib/services/githubService";
 import { sendExecutionResultNotification } from "@/lib/services/notificationService";
 import { getTodayWibKey } from "@/lib/time";
-import type { GeneratedFile, TriggerSource } from "@/types";
+import type { GeneratedFile, PushMode, TriggerSource } from "@/types";
 
-export async function executeSuggestionById(suggestionId: number, triggeredBy: TriggerSource) {
+export async function executeSuggestionById(
+  suggestionId: number,
+  triggeredBy: TriggerSource,
+  overridePushMode?: PushMode
+) {
   const todayKey = getTodayWibKey();
 
   // Atomically check daily limit, claim DailySuggestion (PENDING -> EXECUTING), and acquire DailyExecutionLock
@@ -83,12 +91,27 @@ export async function executeSuggestionById(suggestionId: number, triggeredBy: T
         );
       }
 
-      pushResult = await pushFilesToExistingRepo(
-        repoRecord.name,
-        repoRecord.defaultBranch || "main",
-        suggestion.title,
-        validatedFiles
-      );
+      const settings = await prisma.appSettings.findUnique({ where: { id: 1 } });
+      const effectivePushMode: PushMode =
+        overridePushMode ?? (settings?.pushMode === "BRANCH_PR" ? "BRANCH_PR" : "DIRECT_MAIN");
+
+      if (effectivePushMode === "BRANCH_PR") {
+        pushResult = await pushFilesViaBranchAndPR(
+          repoRecord.name,
+          repoRecord.defaultBranch || "main",
+          todayKey,
+          suggestion.title,
+          suggestion.reasoning,
+          validatedFiles
+        );
+      } else {
+        pushResult = await pushFilesToExistingRepo(
+          repoRecord.name,
+          repoRecord.defaultBranch || "main",
+          suggestion.title,
+          validatedFiles
+        );
+      }
     }
 
     await prisma.dailySuggestion.update({
@@ -114,6 +137,7 @@ export async function executeSuggestionById(suggestionId: number, triggeredBy: T
         commitMessage: suggestion.title,
         commitSha: pushResult.commitSha,
         commitUrl: pushResult.commitUrl,
+        prUrl: pushResult.prUrl ?? null,
         triggeredBy,
         status: "SUCCESS",
       },
@@ -126,6 +150,7 @@ export async function executeSuggestionById(suggestionId: number, triggeredBy: T
         actionType: suggestion.type,
         commitMessage: suggestion.title,
         commitUrl: pushResult.commitUrl,
+        prUrl: pushResult.prUrl,
         triggeredBy,
       });
     } catch {

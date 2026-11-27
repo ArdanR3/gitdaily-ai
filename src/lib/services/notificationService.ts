@@ -109,6 +109,7 @@ export async function sendExecutionResultNotification(params: {
   actionType: string;
   commitMessage: string;
   commitUrl?: string;
+  prUrl?: string;
   triggeredBy: string;
   errorMessage?: string;
 }): Promise<void> {
@@ -122,6 +123,7 @@ export async function sendExecutionResultNotification(params: {
     `• Repo: <code>${escapeHtml(params.repoName)}</code> (${escapeHtml(params.actionType)})`,
     `• Commit: <code>${escapeHtml(params.commitMessage)}</code>`,
   ];
+  if (params.prUrl) htmlLines.push(`• Pull Request: ${escapeHtml(params.prUrl)}`);
   if (params.commitUrl) htmlLines.push(`• Link Commit: ${escapeHtml(params.commitUrl)}`);
   if (params.errorMessage) htmlLines.push(`• Error: ${escapeHtml(params.errorMessage)}`);
 
@@ -131,6 +133,7 @@ export async function sendExecutionResultNotification(params: {
     `• Repo: \`${params.repoName}\` (${params.actionType})`,
     `• Commit: \`${params.commitMessage}\``,
   ];
+  if (params.prUrl) mdLines.push(`• Pull Request: ${params.prUrl}`);
   if (params.commitUrl) mdLines.push(`• Link Commit: ${params.commitUrl}`);
   if (params.errorMessage) mdLines.push(`• Error: ${params.errorMessage}`);
 

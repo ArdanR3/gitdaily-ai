@@ -20,6 +20,7 @@ import { SuggestionCard } from "@/components/SuggestionCard";
 import { CodePreviewModal, type SuggestionItem } from "@/components/CodePreviewModal";
 import { RepoGuardPanel, type RepoItem } from "@/components/RepoGuardPanel";
 import { ActivityTimeline, type ActivityLogItem } from "@/components/ActivityTimeline";
+import type { PushMode } from "@/types";
 
 interface ToastMessage {
   type: "success" | "error";
@@ -208,10 +209,17 @@ export default function DashboardPage() {
     setSuggestions((prev) => prev.map((s) => (s.id === id ? data.suggestion! : s)));
   }
 
-  async function handleExecute(id: number) {
+  async function handleExecute(id: number, pushMode?: PushMode) {
     try {
-      const res = await fetch(`/api/suggestions/${id}/execute`, { method: "POST" });
-      const data = (await res.json()) as { pushResult?: { repo: string; commitUrl: string }; error?: string };
+      const res = await fetch(`/api/suggestions/${id}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pushMode ? { pushMode } : {}),
+      });
+      const data = (await res.json()) as {
+        pushResult?: { repo: string; commitUrl: string; prUrl?: string; prNumber?: number };
+        error?: string;
+      };
       if (!res.ok) {
         showToast("error", data.error || "Gagal push ke GitHub.");
         await loadAll();
@@ -225,7 +233,10 @@ export default function DashboardPage() {
           colors: ["#FFD23F", "#88D498", "#FF6B6B", "#74B9FF", "#B8A9FA", "#000000"],
         });
       }
-      showToast("success", `Quest Cleared! Berhasil push ke github.com/ArdanR3/${data.pushResult?.repo}!`);
+      const successMsg = data.pushResult?.prUrl
+        ? `Quest Cleared! Pull Request #${data.pushResult.prNumber ?? ""} dibuka di github.com/ArdanR3/${data.pushResult.repo}!`
+        : `Quest Cleared! Berhasil push ke github.com/ArdanR3/${data.pushResult?.repo}!`;
+      showToast("success", successMsg);
       await loadAll();
     } catch {
       showToast("error", "Kesalahan jaringan saat eksekusi push.");
@@ -373,7 +384,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={generating || isDone}
                   onClick={handleGenerate}
-                  className="nb-btn inline-flex min-h-[40px] cursor-pointer items-center gap-2 bg-white px-4 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
+                  className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center gap-2 bg-white px-4 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[40px]"
                 >
                   {generating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -401,7 +412,7 @@ export default function DashboardPage() {
                       type="button"
                       onClick={handleSync}
                       disabled={syncing}
-                      className="nb-btn inline-flex min-h-[42px] cursor-pointer items-center gap-2 bg-white px-5 py-2 text-xs font-extrabold uppercase text-black disabled:opacity-50"
+                      className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center gap-2 bg-white px-5 py-2 text-xs font-extrabold uppercase text-black disabled:opacity-50 sm:min-h-[42px]"
                     >
                       {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       Sync Repos
@@ -410,7 +421,7 @@ export default function DashboardPage() {
                       type="button"
                       onClick={handleGenerate}
                       disabled={generating || isDone}
-                      className="nb-btn inline-flex min-h-[42px] cursor-pointer items-center gap-2 bg-[#88D498] px-5 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
+                      className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center gap-2 bg-[#88D498] px-5 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[42px]"
                     >
                       {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                       Generate Suggestions
@@ -424,6 +435,7 @@ export default function DashboardPage() {
                       key={item.id}
                       suggestion={item}
                       executedToday={isDone}
+                      defaultPushMode={profileData?.pushMode === "BRANCH_PR" ? "BRANCH_PR" : "DIRECT_MAIN"}
                       onPreview={setPreviewItem}
                       onVisibilityChange={handleVisibilityChange}
                       onExecute={handleExecute}

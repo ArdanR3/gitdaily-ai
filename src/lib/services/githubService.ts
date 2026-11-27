@@ -239,6 +239,141 @@ export async function pushFilesToExistingRepo(
   }
 }
 
+function buildAiBranchSlug(commitMessage: string): string {
+  const cleaned = commitMessage
+    .toLowerCase()
+    .replace(/^[a-z]+(\([^)]*\))?:\s*/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+  return cleaned || "update";
+}
+
+export async function pushFilesViaBranchAndPR(
+  repo: string,
+  preferredBranch: string,
+  dateKey: string,
+  commitMessage: string,
+  reasoning: string,
+  files: GeneratedFile[]
+): Promise<PushResult> {
+  const validatedFiles = validateFilesForCommit(files);
+  const octokit = getOctokit();
+  const owner = getGitHubUsername();
+
+  try {
+    // Live privacy check before touching any existing repository
+    const { data: liveRepo } = await octokit.repos.get({ owner, repo });
+    if (liveRepo.private) {
+      throw new Error(
+        `Diblokir oleh Security Guard: repository "${repo}" saat ini berstatus Private di GitHub.`
+      );
+    }
+
+    const { branch: baseBranch, headSha } = await resolveBranchRef(octokit, owner, repo, preferredBranch);
+
+    const compactDate = dateKey.replace(/-/g, "");
+    const baseSlug = buildAiBranchSlug(commitMessage);
+    let newBranch = `gitdaily/ai-${compactDate}-${baseSlug}`;
+
+    try {
+      await octokit.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${newBranch}`,
+        sha: headSha,
+      });
+    } catch {
+      const suffix = Math.random().toString(36).slice(2, 6);
+      newBranch = `gitdaily/ai-${compactDate}-${baseSlug.slice(0, 24)}-${suffix}`;
+      await octokit.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${newBranch}`,
+        sha: headSha,
+      });
+    }
+
+    const { data: baseCommit } = await octokit.git.getCommit({
+      owner,
+      repo,
+      commit_sha: headSha,
+    });
+
+    const treeItems = await Promise.all(
+      validatedFiles.map(async (file) => {
+        const { data: blob } = await octokit.git.createBlob({
+          owner,
+          repo,
+          content: Buffer.from(file.content, "utf-8").toString("base64"),
+          encoding: "base64",
+        });
+        return {
+          path: file.path,
+          mode: "100644" as const,
+          type: "blob" as const,
+          sha: blob.sha,
+        };
+      })
+    );
+
+    const { data: newTree } = await octokit.git.createTree({
+      owner,
+      repo,
+      base_tree: baseCommit.tree.sha,
+      tree: treeItems,
+    });
+
+    const { data: newCommit } = await octokit.git.createCommit({
+      owner,
+      repo,
+      message: commitMessage,
+      tree: newTree.sha,
+      parents: [headSha],
+    });
+
+    await octokit.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${newBranch}`,
+      sha: newCommit.sha,
+    });
+
+    const fileListMarkdown = validatedFiles.map((f) => `- \`${f.path}\``).join("\n");
+    const prBody = [
+      "### Ringkasan Perubahan (GitDaily AI)",
+      "",
+      reasoning,
+      "",
+      "### Daftar File yang Diubah",
+      fileListMarkdown,
+      "",
+      "---",
+      `_Dibuat otomatis oleh GitDaily AI pada branch \`${newBranch}\` (${dateKey} WIB)._`,
+    ].join("\n");
+
+    const { data: pr } = await octokit.pulls.create({
+      owner,
+      repo,
+      title: commitMessage,
+      head: newBranch,
+      base: baseBranch,
+      body: prBody,
+    });
+
+    return {
+      repo,
+      branch: newBranch,
+      commitSha: newCommit.sha,
+      commitUrl: `https://github.com/${owner}/${repo}/commit/${newCommit.sha}`,
+      prUrl: pr.html_url,
+      prNumber: pr.number,
+    };
+  } catch (error) {
+    throw new Error(formatGitHubError(error));
+  }
+}
+
 export async function createRepositoryWithFiles(
   name: string,
   description: string,

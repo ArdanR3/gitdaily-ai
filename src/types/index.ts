@@ -1,6 +1,7 @@
 export type SuggestionType = "CREATE_REPO" | "UPDATE_REPO";
 export type RepoVisibility = "public" | "private";
 export type AppMode = "APPROVAL" | "AUTOPILOT";
+export type PushMode = "DIRECT_MAIN" | "BRANCH_PR";
 export type NotificationChannel = "TELEGRAM" | "DISCORD" | "NONE";
 export type SuggestionStatus = "PENDING" | "EXECUTED" | "SKIPPED" | "FAILED";
 export type TriggerSource = "MANUAL_APPROVAL" | "AUTOPILOT";
@@ -41,4 +42,6 @@ export interface PushResult {
   branch: string;
   commitSha: string;
   commitUrl: string;
+  prUrl?: string;
+  prNumber?: number;
 }

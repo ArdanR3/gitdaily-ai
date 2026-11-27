@@ -14,10 +14,13 @@ import {
   Shield,
   Bot,
   Sliders,
+  GitBranch,
+  GitPullRequest,
 } from "lucide-react";
 
 interface SettingsPayload {
   mode: "APPROVAL" | "AUTOPILOT";
+  pushMode?: "DIRECT_MAIN" | "BRANCH_PR";
   morningCronTime: string;
   autopilotCronTime: string;
   techPreferences: string;
@@ -26,6 +29,7 @@ interface SettingsPayload {
 
 export default function SettingsPage() {
   const [mode, setMode] = useState<"APPROVAL" | "AUTOPILOT">("APPROVAL");
+  const [pushMode, setPushMode] = useState<"DIRECT_MAIN" | "BRANCH_PR">("DIRECT_MAIN");
   const [morningCronTime, setMorningCronTime] = useState("08:00");
   const [autopilotCronTime, setAutopilotCronTime] = useState("21:00");
   const [channel, setChannel] = useState<"TELEGRAM" | "DISCORD" | "NONE">("TELEGRAM");
@@ -45,6 +49,7 @@ export default function SettingsPage() {
         const data = (await res.json()) as { settings: SettingsPayload };
         const s = data.settings;
         setMode(s.mode);
+        setPushMode(s.pushMode === "BRANCH_PR" ? "BRANCH_PR" : "DIRECT_MAIN");
         setMorningCronTime(s.morningCronTime);
         setAutopilotCronTime(s.autopilotCronTime);
         setChannel(s.notificationChannel);
@@ -81,6 +86,7 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode,
+          pushMode,
           morningCronTime,
           autopilotCronTime,
           notificationChannel: channel,
@@ -130,7 +136,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-3">
             <Link
               href="/"
-              className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Dashboard</span>
@@ -217,6 +223,55 @@ export default function SettingsPage() {
                     <div className="text-xs font-extrabold uppercase text-black">Auto-Pilot Mode</div>
                     <p className="mt-1 text-[11px] font-semibold leading-relaxed text-black/80">
                       Otomatis push 1 saran aman jika belum ada aktivitas hingga {autopilotCronTime} WIB.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </section>
+
+            {/* Execution Delivery Mode (Direct Main vs Branch + PR) */}
+            <section className="nb-card p-5 sm:p-6">
+              <h2 className="font-display text-base font-extrabold uppercase text-black">
+                Mode Eksekusi Update Repo
+              </h2>
+              <p className="mt-0.5 text-xs font-medium text-black/75">
+                Tentukan apakah update repo lama langsung di-push ke branch default atau lewat branch baru + Pull Request.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  aria-pressed={pushMode === "DIRECT_MAIN"}
+                  onClick={() => setPushMode("DIRECT_MAIN")}
+                  className={`flex min-h-[44px] cursor-pointer items-start gap-3 border-3 border-black p-4 text-left shadow-[4px_4px_0_0_#000] transition ${
+                    pushMode === "DIRECT_MAIN" ? "bg-[#88D498]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
+                  }`}
+                >
+                  <GitBranch className="mt-0.5 h-5 w-5 shrink-0 text-black" aria-hidden="true" />
+                  <div>
+                    <div className="text-xs font-extrabold uppercase text-black">
+                      Direct Main (Default)
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-black/80">
+                      Commit langsung ke branch default (main/master) agar kontribusi harian langsung tercatat.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={pushMode === "BRANCH_PR"}
+                  onClick={() => setPushMode("BRANCH_PR")}
+                  className={`flex min-h-[44px] cursor-pointer items-start gap-3 border-3 border-black p-4 text-left shadow-[4px_4px_0_0_#000] transition ${
+                    pushMode === "BRANCH_PR" ? "bg-[#FFD23F]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
+                  }`}
+                >
+                  <GitPullRequest className="mt-0.5 h-5 w-5 shrink-0 text-black" aria-hidden="true" />
+                  <div>
+                    <div className="text-xs font-extrabold uppercase text-black">
+                      Branch + Pull Request
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-black/80">
+                      Buat branch gitdaily/ai-YYYYMMDD-... dan buka Pull Request untuk direview di GitHub.
                     </p>
                   </div>
                 </button>
@@ -327,7 +382,7 @@ export default function SettingsPage() {
                   type="button"
                   disabled={testing || channel === "NONE"}
                   onClick={handleTestNotification}
-                  className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3.5 py-1.5 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-45"
+                  className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3.5 py-1.5 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-45 sm:min-h-[38px]"
                 >
                   {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />}
                   <span>Test Notification</span>
@@ -340,7 +395,7 @@ export default function SettingsPage() {
                     key={ch}
                     type="button"
                     onClick={() => setChannel(ch)}
-                    className={`nb-btn-sm cursor-pointer py-2.5 font-mono text-xs font-extrabold uppercase text-black ${
+                    className={`nb-btn-sm min-h-[44px] cursor-pointer py-2.5 font-mono text-xs font-extrabold uppercase text-black sm:min-h-[38px] ${
                       channel === ch ? "bg-black text-[#FFD23F]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
                     }`}
                   >

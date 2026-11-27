@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FolderPlus,
   GitCommitHorizontal,
+  GitBranch,
+  GitPullRequest,
   FileCode2,
   Globe,
   Lock,
@@ -13,20 +15,22 @@ import {
   CheckCircle2,
   Terminal,
 } from "lucide-react";
-import type { GeneratedFile } from "@/types";
+import type { GeneratedFile, PushMode } from "@/types";
 import type { SuggestionItem } from "./CodePreviewModal";
 
 interface SuggestionCardProps {
   suggestion: SuggestionItem;
   executedToday: boolean;
+  defaultPushMode: PushMode;
   onPreview: (s: SuggestionItem) => void;
   onVisibilityChange: (id: number, visibility: "public" | "private") => Promise<void>;
-  onExecute: (id: number) => Promise<void>;
+  onExecute: (id: number, pushMode?: PushMode) => Promise<void>;
 }
 
 export function SuggestionCard({
   suggestion,
   executedToday,
+  defaultPushMode,
   onPreview,
   onVisibilityChange,
   onExecute,
@@ -34,6 +38,11 @@ export function SuggestionCard({
   const [executing, setExecuting] = useState(false);
   const [updatingVis, setUpdatingVis] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [pushMode, setPushMode] = useState<PushMode>(defaultPushMode);
+
+  useEffect(() => {
+    setPushMode(defaultPushMode);
+  }, [defaultPushMode]);
 
   const files: GeneratedFile[] = (() => {
     try {
@@ -46,6 +55,7 @@ export function SuggestionCard({
   const isCreate = suggestion.type === "CREATE_REPO";
   const isExecuted = suggestion.status === "EXECUTED";
   const canExecute = !executedToday && suggestion.status === "PENDING" && !executing;
+  const isBranchPr = !isCreate && pushMode === "BRANCH_PR";
 
   async function handleToggleVisibility(next: "public" | "private") {
     if (next === suggestion.visibility || updatingVis) return;
@@ -62,7 +72,7 @@ export function SuggestionCard({
     setConfirming(false);
     setExecuting(true);
     try {
-      await onExecute(suggestion.id);
+      await onExecute(suggestion.id, isCreate ? undefined : pushMode);
     } finally {
       setExecuting(false);
     }
@@ -77,7 +87,6 @@ export function SuggestionCard({
   return (
     <article className="nb-card flex flex-col justify-between transition-transform duration-100 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_0_#000]">
       <div>
-        {/* Flat High-Contrast Color-Block Header */}
         <div className={`border-b-3 border-black px-5 py-4 ${headerBg}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 border-2 border-black bg-white px-2.5 py-1 font-mono text-[11px] font-extrabold uppercase text-black">
@@ -100,7 +109,7 @@ export function SuggestionCard({
                   disabled={updatingVis}
                   aria-pressed={suggestion.visibility === "public"}
                   onClick={() => handleToggleVisibility("public")}
-                  className={`inline-flex cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase ${
+                  className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase sm:min-h-[28px] ${
                     suggestion.visibility === "public"
                       ? "bg-black text-[#FFD23F]"
                       : "bg-white text-black hover:bg-[#FFF3C4]"
@@ -114,7 +123,7 @@ export function SuggestionCard({
                   disabled={updatingVis}
                   aria-pressed={suggestion.visibility === "private"}
                   onClick={() => handleToggleVisibility("private")}
-                  className={`inline-flex cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase ${
+                  className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase sm:min-h-[28px] ${
                     suggestion.visibility === "private"
                       ? "bg-black text-[#FFD23F]"
                       : "bg-white text-black hover:bg-[#FFF3C4]"
@@ -122,6 +131,41 @@ export function SuggestionCard({
                 >
                   <Lock className="h-3 w-3" aria-hidden="true" />
                   Private
+                </button>
+              </div>
+            )}
+
+            {!isCreate && suggestion.status === "PENDING" && (
+              <div
+                role="group"
+                aria-label="Mode push untuk update repository"
+                className="inline-flex border-2 border-black bg-white p-0.5 text-[11px]"
+              >
+                <button
+                  type="button"
+                  aria-pressed={pushMode === "DIRECT_MAIN"}
+                  onClick={() => setPushMode("DIRECT_MAIN")}
+                  className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase sm:min-h-[28px] ${
+                    pushMode === "DIRECT_MAIN"
+                      ? "bg-black text-[#88D498]"
+                      : "bg-white text-black hover:bg-[#FFF3C4]"
+                  }`}
+                >
+                  <GitBranch className="h-3 w-3" aria-hidden="true" />
+                  Main
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={pushMode === "BRANCH_PR"}
+                  onClick={() => setPushMode("BRANCH_PR")}
+                  className={`inline-flex min-h-[36px] cursor-pointer items-center gap-1 px-2.5 py-1 font-bold uppercase sm:min-h-[28px] ${
+                    pushMode === "BRANCH_PR"
+                      ? "bg-black text-[#FFD23F]"
+                      : "bg-white text-black hover:bg-[#FFF3C4]"
+                  }`}
+                >
+                  <GitPullRequest className="h-3 w-3" aria-hidden="true" />
+                  Branch + PR
                 </button>
               </div>
             )}
@@ -139,9 +183,7 @@ export function SuggestionCard({
           </h3>
         </div>
 
-        {/* Body */}
         <div className="p-5">
-          {/* Raw Black Terminal Bar */}
           <div className="flex items-start gap-2 border-2 border-black bg-black px-3.5 py-2.5 font-mono text-xs font-bold text-[#FFD23F]">
             <Terminal className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#88D498]" aria-hidden="true" />
             <span className="break-words leading-relaxed">{suggestion.title}</span>
@@ -151,7 +193,6 @@ export function SuggestionCard({
             {suggestion.reasoning}
           </p>
 
-          {/* File Chips */}
           <div className="mt-4">
             <div className="mb-2 flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-black">
               <span>Changed Files</span>
@@ -174,7 +215,6 @@ export function SuggestionCard({
         </div>
       </div>
 
-      {/* Action Footer + Inline Neo-Brutalist Confirmation */}
       <div className="border-t-3 border-black bg-[#F5F0E8] px-5 py-4">
         {confirming ? (
           <div
@@ -185,7 +225,9 @@ export function SuggestionCard({
             <p className="text-xs font-extrabold leading-relaxed text-black">
               {isCreate
                 ? `Buat repository ${suggestion.visibility.toUpperCase()} baru "${suggestion.targetRepo}" di akun @ArdanR3?`
-                : `Push commit ini langsung ke repository "${suggestion.targetRepo}" di akun @ArdanR3?`}
+                : isBranchPr
+                  ? `Buat branch baru & buka Pull Request ke repository "${suggestion.targetRepo}" di akun @ArdanR3?`
+                  : `Push commit ini langsung ke branch default repository "${suggestion.targetRepo}" di akun @ArdanR3?`}
             </p>
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
@@ -194,8 +236,12 @@ export function SuggestionCard({
                 disabled={executing}
                 className="nb-btn-sm inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-1.5 bg-[#88D498] px-3 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
               >
-                <Rocket className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Push ke ArdanR3</span>
+                {isBranchPr ? (
+                  <GitPullRequest className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <Rocket className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                <span>{isBranchPr ? "Buat PR ke ArdanR3" : "Push ke ArdanR3"}</span>
               </button>
               <button
                 type="button"
@@ -223,16 +269,30 @@ export function SuggestionCard({
               onClick={() => setConfirming(true)}
               className={`nb-btn inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 px-4 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[42px] ${
                 canExecute
-                  ? "cursor-pointer bg-[#88D498]"
+                  ? isBranchPr
+                    ? "cursor-pointer bg-[#FFD23F]"
+                    : "cursor-pointer bg-[#88D498]"
                   : "cursor-not-allowed bg-[#E5E5E5] opacity-60 shadow-none"
               }`}
             >
               {executing ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : isBranchPr ? (
+                <GitPullRequest className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <Rocket className="h-4 w-4" aria-hidden="true" />
               )}
-              <span>{executing ? "Pushing..." : isExecuted ? "Sudah Push" : "Approve & Push"}</span>
+              <span>
+                {executing
+                  ? isBranchPr
+                    ? "Opening PR..."
+                    : "Pushing..."
+                  : isExecuted
+                    ? "Sudah Push"
+                    : isBranchPr
+                      ? "Approve & Open PR"
+                      : "Approve & Push"}
+              </span>
             </button>
           </div>
         )}

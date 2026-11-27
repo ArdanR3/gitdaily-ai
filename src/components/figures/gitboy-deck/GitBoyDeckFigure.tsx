@@ -191,7 +191,7 @@ export function GitBoyDeckFigure({
           type="button"
           onClick={() => setExploded((prev) => !prev)}
           aria-pressed={exploded}
-          className={`nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 px-2.5 py-1 font-mono text-[11px] font-extrabold uppercase ${
+          className={`nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 px-2.5 py-1 font-mono text-[11px] font-extrabold uppercase sm:min-h-[34px] ${
             exploded
               ? "bg-[#111111] text-[#facc15]"
               : "bg-[#facc15] text-[#111111]"

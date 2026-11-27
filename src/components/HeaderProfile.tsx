@@ -31,6 +31,7 @@ export interface ProfileData {
   statusToday: "DONE" | "PENDING";
   streak: number;
   mode: "APPROVAL" | "AUTOPILOT";
+  pushMode?: "DIRECT_MAIN" | "BRANCH_PR";
   nextSchedule: {
     targetTimeWib: string;
     remainingMinutes: number;
