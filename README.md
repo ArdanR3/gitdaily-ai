@@ -1,57 +1,74 @@
-# GitDaily AI (`@ArdanR3`)
+# GitDaily AI — Neo-Brutalist GitHub Quest Hub (`@ArdanR3`)
 
-Aplikasi web full-stack **PWA-ready** untuk membantu menjaga konsistensi kontribusi harian akun GitHub **`ArdanR3`** (`https://github.com/ArdanR3`) secara aman, bernilai, dan **100% gratis selamanya** (Neon PostgreSQL Free Tier + Vercel Hobby Plan + Gemini Free Tier + GitHub Actions Cron + Telegram/Discord).
+Aplikasi web full-stack **PWA-ready** bergaya **Neo-Brutalist** dengan ilustrasi anatomi isometrik interaktif **`GITBOY-01 · COMMIT DECK`** untuk menjaga konsistensi kontribusi harian GitHub secara aman, bernilai, dan **100% gratis** (Next.js App Router + Neon PostgreSQL + Prisma + Gemini/Groq AI + GitHub Actions Cron + Telegram/Discord).
 
----
-
-## ✨ Fitur Utama
-
-- **Maksimal 1x Aktivitas / Hari (WIB):** Guardrail database memastikan hanya ada maksimal 1 eksekusi sukses per hari (`Asia/Jakarta`).
-- **AI Suggestion Engine (`gemini-2.5-flash`):** Menganalisis repo non-protected milik `ArdanR3` beserta 5 commit terakhir, lalu menghasilkan 2 saran JSON terstruktur (`CREATE_REPO` & `UPDATE_REPO`) dengan format *Conventional Commits*.
-- **Repository Guard Panel:** Toggle **Allowed / Protected** per repository. Repo `ArdanR3`, `gitdaily-ai` (*self-protection*), serta proyek Unity/Blender/VR otomatis dilindungi saat sinkronisasi pertama.
-- **Anti Junk & Anti Binary Commit:** Menolak konten kosong dan ekstensi biner (`.unity`, `.prefab`, `.fbx`, `.blend`, `.png`, `.tga`, dll.).
-- **Dual Mode:** `APPROVAL` (default: klik Approve di dashboard) atau `AUTOPILOT` (eksekusi otomatis jam 21:00 WIB jika belum ada push hari itu).
-- **Dashboard Auth Gratis:** Dilindungi `DASHBOARD_PASSWORD` + *HTTP-only cookie* HMAC-SHA256 melalui Next.js Edge Middleware.
-- **PWA-Ready:** Bisa di-install di layar utama HP Android maupun iOS.
+![GitDaily AI Neo-Brutalist Dashboard](docs/dashboard-hero.png)
 
 ---
 
-## 🔑 1. Cara Mengambil Kredensial Gratis (Tanpa Kartu Kredit)
+## Arsitektur Sistem
 
-### A. Neon PostgreSQL (Database Cloud Gratis)
-1. Daftar di [neon.tech](https://neon.tech) menggunakan akun GitHub.
-2. Buat project baru (pilih region terdekat, misal **Singapore `ap-southeast-1`**).
-3. Di menu **Connection Details**:
-   - Salin **Pooled connection string** → isi ke `DATABASE_URL`.
-   - Matikan toggle *Connection pooling* lalu salin **Direct connection string** → isi ke `DIRECT_URL`.
+```mermaid
+flowchart LR
+  subgraph Client["Neo-Brutalist PWA (Next.js 15 App Router)"]
+    UI["Dashboard · Quest Track · GITBOY-01"]
+    MAT["Materials PDF/MD/Code Chunker"]
+    SET["Settings · Repo Guard Panel"]
+  end
 
-### B. GitHub Personal Access Token (`ArdanR3`)
-1. Buka **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**.
-2. Klik **Generate new token (classic)**, beri nama `gitdaily-ai`.
-3. Centang scope **`repo`** (akses penuh public & private repo) dan **`read:user`**.
-4. Salin token (`ghp_...`) → isi ke `GITHUB_TOKEN`.
+  subgraph Edge["Security Boundary"]
+    MW["Edge Middleware (HMAC-SHA256 Cookie)"]
+    RL["IP Login Rate-Limit (Neon DB)"]
+    CSP["Strict CSP & Security Headers"]
+  end
 
-### C. Google Gemini API Key (Free Tier)
-1. Buka [Google AI Studio](https://aistudio.google.com/apikey).
-2. Klik **Create API key** → salin hasilnya ke `GEMINI_API_KEY`.
-3. Biarkan `GEMINI_MODEL="gemini-2.5-flash"`.
+  subgraph Core["API & Services Layer"]
+    AI["AI Engine (Gemini 2.5 Flash / Groq)"]
+    GUARD["Multi-Layer Guard (Private Lock + Anti-Binary + 1x/Day WIB)"]
+    GH["GitHub Octokit Service (Live Privacy Check)"]
+    NOTIF["Telegram HTML / Discord Notifier"]
+  end
 
-### D. Telegram Bot (Notifikasi Gratis)
-1. Chat ke **`@BotFather`** di Telegram → kirim `/newbot` → ikuti instruksi sampai mendapat **Bot Token** → isi ke `TELEGRAM_BOT_TOKEN`.
-2. Kirim 1 pesan bebas (misal `"halo"`) ke bot baru kamu.
-3. Buka di browser: `https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates`
-4. Cari nilai `"chat":{"id": 123456789}` → salin angkanya ke `TELEGRAM_CHAT_ID`.
-   *(Opsional: jika lebih suka Discord, cukup isi `DISCORD_WEBHOOK_URL` dan ubah channel ke `DISCORD` di halaman Settings.)*
+  subgraph Infra["Zero-Cost Cloud Stack"]
+    DB[("Neon PostgreSQL (Prisma)")]
+    CRON["GitHub Actions Cron (08:00 & 21:00 WIB)"]
+  end
+
+  Client --> Edge --> Core
+  CRON -->|"Bearer CRON_SECRET"| Core
+  Core <--> DB
+  GH -->|"Safe Commit / New Repo"| GitHub["GitHub (@ArdanR3)"]
+```
+
+### Interactive Anatomy — `GITBOY-01 · COMMIT DECK`
+
+Dashboard dilengkapi komponen SVG isometrik standalone **3-layer Explode View** (`Shell`, `AI Core PCB & LCD`, dan `Study Cartridge`) yang terhubung langsung ke metrik streak, jumlah materi belajar aktif, dan status proteksi repository secara real-time.
+
+![GITBOY-01 Interactive Isometric Commit Deck](docs/gitboy-deck.png)
 
 ---
 
-## 💻 2. Menjalankan di Lokal
+## Fitur Utama & Keamanan Berlapis
 
-1. Salin `.env.example` menjadi `.env.local` dan lengkapi nilainya (termasuk `DASHBOARD_PASSWORD` dan `CRON_SECRET` acak):
+| Layer | Mekanisme |
+| --- | --- |
+| **Multi-Layer Private Repo Guard** | Repository `isPrivate === true` dikunci permanen di 4 lapis: blokir `403` di `PATCH /api/repos/guard`, filter query AI, pengecekan `executionService`, dan *live check* langsung ke GitHub API (`octokit.repos.get`) sebelum commit. |
+| **Daily WIB Guardrail** | Transaksi atomik + tabel `DailyExecutionLock` & `DailyCronLock` memastikan maksimal **1x eksekusi sukses per hari (`Asia/Jakarta`)**. |
+| **Auth & Brute-Force Protection** | Cookie `HttpOnly` + `SameSite=Lax` + `Secure` bertanda tangan HMAC-SHA256, perbandingan secret *constant-time* SHA-256, serta *sliding-window IP rate limiting* (`LoginAttempt`) pada `/api/auth/login`. |
+| **Prompt-Injection & File Guard** | Sanitasi tag `<untrusted_study_material>` & `<untrusted_repo_metadata>`, batas maks. 5 file / 50 KB per commit, serta blokir file biner (`.unity`, `.fbx`, `.blend`, `.png`, dll.) dan konfigurasi sensitif (`.github/`, `.env*`, `package.json`, `vercel.json`, `Dockerfile`, dll.). |
+| **Study Material Chunker** | Ekstrak teks PDF (*client-side* via `pdfjs-dist`), Markdown, atau kode sumber menjadi potongan ~3.000 karakter yang diputar otomatis sebagai konteks referensi harian AI. |
+| **Dual Mode & Notifikasi** | Mode `APPROVAL` (default: review & edit kode di *Code Forge Modal* sebelum push) atau `AUTOPILOT` (21:00 WIB), dengan notifikasi **Telegram (HTML-escaped)** dan **Discord Webhook**. |
+| **PWA & WCAG 2.2** | Desain Neo-Brutalist responsif (`375px` mobile hingga desktop), `prefers-reduced-motion`, *focus trap* modal, dan siap di-install ke *Home Screen* Android/iOS. |
+
+---
+
+## Menjalankan di Lokal
+
+1. Salin `.env.example` menjadi `.env.local` dan lengkapi kredensial (`DATABASE_URL`, `DIRECT_URL`, `GITHUB_TOKEN`, `GEMINI_API_KEY`, `DASHBOARD_PASSWORD`, `CRON_SECRET`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`):
    ```bash
    cp .env.example .env.local
    ```
-2. Install dependensi dan push skema Prisma ke Neon PostgreSQL:
+2. Install dependensi dan sinkronisasi skema Prisma ke Neon PostgreSQL:
    ```bash
    npm install
    npx prisma db push
@@ -64,44 +81,19 @@ Aplikasi web full-stack **PWA-ready** untuk membantu menjaga konsistensi kontrib
 
 ---
 
-## 🚀 3. Deploy 100% Gratis ke Vercel Hobby Plan + GitHub Actions
+## Deploy Gratis (Vercel Hobby + GitHub Actions)
 
-### A. Push ke GitHub & Deploy ke Vercel
-1. Buat repository baru bernama **`gitdaily-ai`** (disarankan **Private** atau **Public**) di akun `ArdanR3`, lalu push proyek ini ke GitHub.
-2. Buka [vercel.com](https://vercel.com), login dengan GitHub, klik **Add New → Project**, pilih repo `gitdaily-ai`.
-3. Di menu **Environment Variables**, masukkan seluruh variabel dari `.env.local`:
-   - `DATABASE_URL`
-   - `DIRECT_URL`
-   - `GITHUB_USERNAME` = `ArdanR3`
-   - `GITHUB_TOKEN`
-   - `GEMINI_API_KEY`
-   - `GEMINI_MODEL` = `gemini-2.5-flash`
-   - `TELEGRAM_BOT_TOKEN` & `TELEGRAM_CHAT_ID` *(atau `DISCORD_WEBHOOK_URL`)*
-   - `DASHBOARD_PASSWORD`
-   - `CRON_SECRET`
-   - `NEXT_PUBLIC_APP_URL` = URL Vercel kamu (misal `https://gitdaily-ai.vercel.app`)
-   - `TZ` = `Asia/Jakarta`
-4. Klik **Deploy**. Setelah sukses, jalankan `npx prisma db push` sekali jika tabel belum dibuat di Neon.
-
-### B. Aktifkan Jadwal Harian via GitHub Actions (Gratis)
-Workflow sudah tersedia di `.github/workflows/gitdaily-cron.yml`:
-- **08:00 WIB (`01:00 UTC`)** → memanggil `POST /api/cron/daily` (sync repo, generate 2 saran, kirim notifikasi).
-- **21:00 WIB (`14:00 UTC`)** → memanggil `POST /api/cron/autopilot` (auto-push hanya jika mode `AUTOPILOT` & belum ada push sukses hari itu).
-
-Agar workflow bisa berjalan:
-1. Buka repo `gitdaily-ai` di GitHub → **Settings → Secrets and variables → Actions**.
-2. Klik **New repository secret** dan tambahkan 2 secret berikut:
-   - `APP_URL`: URL production Vercel kamu **tanpa garis miring di akhir**, contoh `https://gitdaily-ai.vercel.app`
-   - `CRON_SECRET`: nilai secret yang sama persis dengan `CRON_SECRET` di Vercel.
-3. Kamu bisa langsung mengetesnya di tab **Actions → GitDaily AI Scheduler → Run workflow**.
+1. Import repository ini ke [Vercel](https://vercel.com) dan masukkan seluruh environment variables dari `.env.local` (termasuk `NEXT_PUBLIC_APP_URL` dan `APP_TIMEZONE=Asia/Jakarta`).
+2. Tambahkan 2 GitHub Actions Secrets di **Settings → Secrets and variables → Actions**:
+   - `APP_URL`: URL production Vercel tanpa garis miring di akhir (contoh: `https://gitdaily-ai.vercel.app`)
+   - `CRON_SECRET`: nilai acak yang sama persis dengan `CRON_SECRET` di Vercel.
+3. Workflow `.github/workflows/gitdaily-cron.yml` akan berjalan otomatis:
+   - **08:00 WIB (`01:00 UTC`)** → `POST /api/cron/daily` (sync repo, generate 2 saran, kirim notifikasi).
+   - **21:00 WIB (`14:00 UTC`)** → `POST /api/cron/autopilot` (auto-push hanya jika mode `AUTOPILOT` dan belum ada push sukses hari itu).
 
 ---
 
-## 📱 4. Cara Install sebagai Aplikasi HP (PWA)
+## Install sebagai Aplikasi HP (PWA)
 
-- **Android (Chrome):**
-  1. Buka URL Vercel kamu di Chrome dan login.
-  2. Ketuk ikon titik tiga (`⋮`) di pojok kanan atas → pilih **Install app** / **Tambahkan ke layar utama**.
-- **iOS (Safari):**
-  1. Buka URL Vercel kamu di Safari dan login.
-  2. Ketuk tombol **Share** (ikon kotak dengan panah ke atas) → pilih **Add to Home Screen** → **Add**.
+- **Android (Chrome):** Buka URL aplikasi → login → ikon menu (`⋮`) → **Install app** / **Tambahkan ke layar utama**.
+- **iOS (Safari):** Buka URL aplikasi → login → tombol **Share** → **Add to Home Screen** → **Add**.
