@@ -104,3 +104,9 @@ Di halaman `/materials`, ilustrasi isometrik 3 objek terpisah memvisualisasikan 
 
 - **Android (Chrome):** Buka URL aplikasi → login → ikon menu (`⋮`) → **Install app** / **Tambahkan ke layar utama**.
 - **iOS (Safari):** Buka URL aplikasi → login → tombol **Share** → **Add to Home Screen** → **Add**.
+
+---
+
+## Dokumentasi Desain & UI Stack
+
+Ingin melihat daftar lengkap *NPM packages*, token CSS Neo-Brutalist, arsitektur ilustrasi isometrik (`SVG + Framer Motion`), serta plugin/skill Antigravity yang dipakai untuk membangun antarmuka proyek ini? Baca panduan lengkapnya di **[docs/UI-DESIGN-STACK.md](docs/UI-DESIGN-STACK.md)**.
