@@ -44,6 +44,8 @@ export default function MaterialsPage() {
   const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [editingItem, setEditingItem] = useState<StudyMaterialItem | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editChunkPos, setEditChunkPos] = useState(1);
@@ -191,11 +193,18 @@ export default function MaterialsPage() {
     setMaterials((prev) => prev.map((m) => (m.id === item.id ? data.material : m)));
   }
 
-  async function handleDelete(id: number) {
-    if (!window.confirm("Hapus materi belajar ini?")) return;
-    const res = await fetch(`/api/materials/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setMaterials((prev) => prev.filter((m) => m.id !== id));
+  async function handleConfirmDelete(id: number) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/materials/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setMaterials((prev) => prev.filter((m) => m.id !== id));
+        setConfirmDeleteId(null);
+      } else {
+        setAlert({ type: "error", text: "Gagal menghapus materi belajar." });
+      }
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -556,15 +565,40 @@ export default function MaterialsPage() {
                         <span>{m.isActive ? "Active" : "Paused"}</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(m.id)}
-                        title="Hapus materi"
-                        aria-label={`Hapus materi ${m.title}`}
-                        className="nb-btn-sm inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center bg-[#FF6B6B] p-2 text-black sm:min-h-[34px] sm:min-w-[34px]"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                      </button>
+                      {confirmDeleteId === m.id ? (
+                        <div
+                          role="group"
+                          aria-label={`Konfirmasi hapus ${m.title}`}
+                          className="inline-flex items-center gap-1.5 border-2 border-black bg-[#FFF3C4] p-1 shadow-[3px_3px_0_0_#000]"
+                        >
+                          <button
+                            type="button"
+                            disabled={deletingId === m.id}
+                            onClick={() => void handleConfirmDelete(m.id)}
+                            className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center justify-center bg-[#FF6B6B] px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black disabled:opacity-50 sm:min-h-[34px]"
+                          >
+                            {deletingId === m.id ? "..." : "Hapus"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletingId === m.id}
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center justify-center bg-white px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black sm:min-h-[34px]"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(m.id)}
+                          title="Hapus materi"
+                          aria-label={`Hapus materi ${m.title}`}
+                          className="nb-btn-sm inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center bg-[#FF6B6B] p-2 text-black sm:min-h-[34px] sm:min-w-[34px]"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

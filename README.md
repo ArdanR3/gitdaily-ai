@@ -46,6 +46,12 @@ Dashboard dilengkapi komponen SVG isometrik standalone **3-layer Explode View** 
 
 ![GITBOY-01 Interactive Isometric Commit Deck](docs/gitboy-deck.png)
 
+### Interactive Anatomy — `FIG 02 · CODEX ARCHIVE RACK`
+
+Di halaman `/materials`, ilustrasi isometrik 3 objek terpisah memvisualisasikan alur **Codex Shelf** (buku hijau mint yang tertarik keluar) → **~3K Open Book** (buku terbuka dengan halaman melengkung & *scanner bar*) → **Lilac Cartridge** (`GITBOY-01`), lengkap dengan **Explode View** dan modal **Edit Materi** (*re-chunking* otomatis & *chunk clamp*).
+
+![FIG 02 Codex Archive Rack Knowledge Chunker](docs/fig02-codex-rack.png)
+
 ---
 
 ## Fitur Utama & Keamanan Berlapis
@@ -53,12 +59,13 @@ Dashboard dilengkapi komponen SVG isometrik standalone **3-layer Explode View** 
 | Layer | Mekanisme |
 | --- | --- |
 | **Multi-Layer Private Repo Guard** | Repository `isPrivate === true` dikunci permanen di 4 lapis: blokir `403` di `PATCH /api/repos/guard`, filter query AI, pengecekan `executionService`, dan *live check* langsung ke GitHub API (`octokit.repos.get`) sebelum commit. |
+| **Mode Eksekusi `DIRECT_MAIN` & `BRANCH_PR`** | Mendukung *direct push* ke branch default maupun pembuatan branch baru (`gitdaily/ai-YYYYMMDD-<slug>`) + **Pull Request otomatis** (dapat dipilih default di `/settings` atau per-kartu di dashboard). |
 | **Daily WIB Guardrail** | Transaksi atomik + tabel `DailyExecutionLock` & `DailyCronLock` memastikan maksimal **1x eksekusi sukses per hari (`Asia/Jakarta`)**. |
-| **Auth & Brute-Force Protection** | Cookie `HttpOnly` + `SameSite=Lax` + `Secure` bertanda tangan HMAC-SHA256, perbandingan secret *constant-time* SHA-256, serta *sliding-window IP rate limiting* (`LoginAttempt`) pada `/api/auth/login`. |
+| **Auth & Brute-Force Protection** | Cookie `HttpOnly` + `SameSite=Lax` + `Secure` bertanda tangan HMAC-SHA256, perbandingan secret *constant-time* SHA-256, serta *sliding-window IP rate limiting* (`LoginAttempt`, dibersihkan otomatis tiap 24 jam di cron harian). |
 | **Prompt-Injection & File Guard** | Sanitasi tag `<untrusted_study_material>` & `<untrusted_repo_metadata>`, batas maks. 5 file / 50 KB per commit, serta blokir file biner (`.unity`, `.fbx`, `.blend`, `.png`, dll.) dan konfigurasi sensitif (`.github/`, `.env*`, `package.json`, `vercel.json`, `Dockerfile`, dll.). |
-| **Study Material Chunker** | Ekstrak teks PDF (*client-side* via `pdfjs-dist`), Markdown, atau kode sumber menjadi potongan ~3.000 karakter yang diputar otomatis sebagai konteks referensi harian AI. |
-| **Dual Mode & Notifikasi** | Mode `APPROVAL` (default: review & edit kode di *Code Forge Modal* sebelum push) atau `AUTOPILOT` (21:00 WIB), dengan notifikasi **Telegram (HTML-escaped)** dan **Discord Webhook**. |
-| **PWA & WCAG 2.2** | Desain Neo-Brutalist responsif (`375px` mobile hingga desktop), `prefers-reduced-motion`, *focus trap* modal, dan siap di-install ke *Home Screen* Android/iOS. |
+| **Study Material Chunker & Editor** | Ekstrak teks PDF (*client-side* via `pdfjs-dist`), Markdown, atau kode sumber menjadi potongan ~3.000 karakter, dilengkapi modal **Edit Materi** (ubah judul, posisi chunk aktif, dan isi teks dengan *re-chunking* real-time) + konfirmasi hapus inline Neo-Brutalist. |
+| **Dual Mode & Notifikasi** | Mode `APPROVAL` (default: review & edit kode di *Code Forge Modal* sebelum push) atau `AUTOPILOT` (21:00 WIB), dengan notifikasi **Telegram (HTML-escaped + link PR)** dan **Discord Webhook**. |
+| **Automated Testing & CI** | Unit test **Vitest** (`npm run test:unit`) berjalan otomatis di GitHub Actions (`.github/workflows/ci.yml`), ditambah E2E regression suite **Playwright** (`npm run test:e2e`) untuk auth, Security Guard `403`, render `FIG 01`/`FIG 02`, dan audit Mobile PWA `375x812`. |
 
 ---
 

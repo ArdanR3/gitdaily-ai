@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { splitIntoStudyChunks } from "@/lib/chunkText";
+import { clampChunkIndex, splitIntoStudyChunks } from "@/lib/chunkText";
 import { safeApiError } from "@/lib/apiError";
 
 const MAX_TITLE_CHARS = 160;
@@ -154,9 +154,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (body.resetProgress) {
       data.currentChunkIndex = 0;
     } else if (requestedChunk !== undefined && Number.isFinite(requestedChunk)) {
-      data.currentChunkIndex = Math.min(maxValidIndex, Math.max(0, Math.floor(requestedChunk)));
+      data.currentChunkIndex = clampChunkIndex(requestedChunk, nextTotalChunks);
     } else if (data.totalChunks !== undefined && existing.currentChunkIndex > maxValidIndex) {
-      data.currentChunkIndex = maxValidIndex;
+      data.currentChunkIndex = clampChunkIndex(existing.currentChunkIndex, nextTotalChunks);
     }
 
     const updated = await prisma.studyMaterial.update({

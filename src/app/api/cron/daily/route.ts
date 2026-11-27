@@ -43,6 +43,12 @@ export async function POST(request: Request) {
     const repos = await syncRepositoriesFromGitHub();
     const suggestions = await generateDailySuggestions(dateKey);
 
+    // Prune stale LoginAttempt records older than 24 hours
+    const staleCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    await prisma.loginAttempt
+      .deleteMany({ where: { updatedAt: { lt: staleCutoff } } })
+      .catch(() => {});
+
     try {
       await sendDailySuggestionsNotification(suggestions);
     } catch {

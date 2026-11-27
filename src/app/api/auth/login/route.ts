@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSessionToken, SESSION_COOKIE_NAME, verifyDashboardPassword } from "@/lib/auth";
 import { getDashboardPassword } from "@/lib/env";
+import { computeNextFailedAttempt, evaluateLoginLockout } from "@/lib/loginRateLimit";
 import { prisma } from "@/lib/prisma";
-
-const MAX_FAILED_ATTEMPTS = 8;
-const WINDOW_MS = 15 * 60 * 1000;
-const LOCKOUT_MS = 15 * 60 * 1000;
 
 function extractClientIp(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -34,29 +31,23 @@ export async function POST(request: Request) {
     const now = new Date();
     const record = await prisma.loginAttempt.findUnique({ where: { ip } }).catch(() => null);
 
-    if (record?.lockedUntil && record.lockedUntil > now) {
-      const retryAfterSec = Math.max(1, Math.ceil((record.lockedUntil.getTime() - now.getTime()) / 1000));
+    const lockState = evaluateLoginLockout(record, now);
+    if (lockState.locked) {
       return NextResponse.json(
-        { error: `Terlalu banyak percobaan login. Coba lagi dalam ${Math.ceil(retryAfterSec / 60)} menit.` },
-        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+        { error: `Terlalu banyak percobaan login. Coba lagi dalam ${Math.ceil(lockState.retryAfterSec / 60)} menit.` },
+        { status: 429, headers: { "Retry-After": String(lockState.retryAfterSec) } }
       );
     }
 
     const valid = typeof body.password === "string" && (await verifyDashboardPassword(body.password));
 
     if (!valid) {
-      const windowExpired = !record || now.getTime() - record.windowStart.getTime() > WINDOW_MS;
-      const nextCount = windowExpired ? 1 : record.failedCount + 1;
-      const lockedUntil = nextCount >= MAX_FAILED_ATTEMPTS ? new Date(now.getTime() + LOCKOUT_MS) : null;
+      const nextAttempt = computeNextFailedAttempt(record, now);
 
       await prisma.loginAttempt
         .upsert({
           where: { ip },
-          update: {
-            failedCount: nextCount,
-            windowStart: windowExpired ? now : record.windowStart,
-            lockedUntil,
-          },
+          update: nextAttempt,
           create: {
             ip,
             failedCount: 1,

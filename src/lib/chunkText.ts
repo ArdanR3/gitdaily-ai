@@ -38,3 +38,9 @@ export function splitIntoStudyChunks(rawText: string, targetSize = 3000, maxSize
 
   return chunks;
 }
+
+export function clampChunkIndex(requested: number, totalChunks: number): number {
+  const maxValidIndex = Math.max(0, Math.floor(totalChunks) - 1);
+  if (!Number.isFinite(requested)) return 0;
+  return Math.min(maxValidIndex, Math.max(0, Math.floor(requested)));
+}
