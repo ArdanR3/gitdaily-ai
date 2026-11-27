@@ -59,7 +59,7 @@ export function HeaderProfile({
   const username = data?.profile.username || "ArdanR3";
 
   return (
-    <header className="border-b-4 border-black bg-[#FFD23F] text-black">
+    <header className="border-b-4 border-black bg-[#FFD23F] pt-[env(safe-area-inset-top)] text-black">
       {/* Top Brutalist Ticker / Nav Strip */}
       <div className="border-b-3 border-black bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -78,7 +78,7 @@ export function HeaderProfile({
           <nav aria-label="Navigasi halaman" className="flex flex-wrap items-center gap-2">
             <Link
               href="/materials"
-              className="nb-btn-sm inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-3 py-1.5 text-xs font-bold uppercase text-black"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-3 py-1.5 text-xs font-bold uppercase text-black sm:min-h-[36px]"
             >
               <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Materials</span>
@@ -86,7 +86,7 @@ export function HeaderProfile({
 
             <Link
               href="/settings"
-              className="nb-btn-sm inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 bg-[#74B9FF] px-3 py-1.5 text-xs font-bold uppercase text-black"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#74B9FF] px-3 py-1.5 text-xs font-bold uppercase text-black sm:min-h-[36px]"
             >
               <Settings className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Settings</span>
@@ -96,7 +96,7 @@ export function HeaderProfile({
               type="button"
               onClick={onLogout}
               aria-label="Logout dari GitDaily AI"
-              className="nb-btn-sm inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 bg-[#FF6B6B] px-3 py-1.5 text-xs font-bold uppercase text-black"
+              className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 bg-[#FF6B6B] px-3 py-1.5 text-xs font-bold uppercase text-black sm:min-h-[36px]"
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Logout</span>

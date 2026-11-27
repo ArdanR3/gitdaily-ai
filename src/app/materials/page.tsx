@@ -258,7 +258,7 @@ export default function MaterialsPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Mis. Modul Struktur Data / Unity Design Patterns"
-                  className="nb-input w-full px-3.5 py-2.5 text-xs font-bold placeholder-black/45"
+                  className="nb-input w-full px-3.5 py-2.5 text-base font-bold placeholder-black/65 sm:text-xs"
                 />
               </div>
 
@@ -293,7 +293,7 @@ export default function MaterialsPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Upload file PDF/kode di atas atau paste langsung catatan materi di sini..."
-                className="nb-input w-full p-3.5 font-mono text-xs font-medium placeholder-black/45"
+                className="nb-input w-full p-3.5 font-mono text-base font-medium placeholder-black/65 sm:text-xs"
               />
             </div>
 
@@ -381,7 +381,7 @@ export default function MaterialsPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleActive(m)}
-                        className={`nb-btn-sm inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black ${
+                        className={`nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black sm:min-h-[34px] ${
                           m.isActive ? "bg-[#88D498]" : "bg-[#F5F0E8]"
                         }`}
                       >

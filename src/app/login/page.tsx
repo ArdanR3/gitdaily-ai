@@ -81,7 +81,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan password..."
-                className="nb-input w-full py-3 pl-10 pr-3.5 text-sm font-bold placeholder-black/45"
+                className="nb-input w-full py-3 pl-10 pr-3.5 text-base font-bold placeholder-black/65 sm:text-sm"
               />
             </div>
           </div>

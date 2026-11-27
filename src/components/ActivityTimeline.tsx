@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
   CheckCircle2,
   XCircle,
@@ -28,19 +27,6 @@ export interface ActivityLogItem {
 interface ActivityTimelineProps {
   logs: ActivityLogItem[];
 }
-
-const listVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, x: -10 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.16 } },
-};
 
 export function ActivityTimeline({ logs }: ActivityTimelineProps) {
   return (
@@ -77,18 +63,13 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
           </p>
         </div>
       ) : (
-        <motion.ol
-          variants={listVariants}
-          initial="hidden"
-          animate="visible"
-          className="relative max-h-[430px] space-y-3 overflow-y-auto pl-6 pr-1 before:absolute before:bottom-3 before:left-[9px] before:top-3 before:w-[3px] before:bg-black"
-        >
+        <ol className="relative max-h-[430px] space-y-3 overflow-y-auto overscroll-contain pl-6 pr-1 before:absolute before:bottom-3 before:left-[9px] before:top-3 before:w-[3px] before:bg-black">
           {logs.map((log) => {
             const isSuccess = log.status === "SUCCESS";
             const isAutopilot = log.triggeredBy === "AUTOPILOT";
 
             return (
-              <motion.li key={log.id} variants={itemVariants} className="relative">
+              <li key={log.id} className="relative">
                 {/* Square Brutalist Timeline Node */}
                 <span
                   aria-hidden="true"
@@ -105,7 +86,7 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
                       ) : (
                         <XCircle className="h-4 w-4 shrink-0 text-[#DC2626]" aria-label="Gagal" />
                       )}
-                      <span className="truncate font-mono text-xs font-extrabold text-black">
+                      <span className="break-all font-mono text-xs font-extrabold text-black">
                         {log.repoName}
                       </span>
                       <span className="border border-black bg-[#FFD23F] px-1.5 py-0.5 font-mono text-[10px] font-bold text-black">
@@ -125,11 +106,11 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
                       </span>
                     </div>
 
-                    <p className="truncate font-mono text-xs font-semibold text-black/80">
+                    <p className="line-clamp-2 break-words font-mono text-xs font-semibold text-black/80">
                       {log.commitMessage}
                     </p>
                     {log.errorMessage && (
-                      <p className="text-xs font-bold text-[#DC2626]">{log.errorMessage}</p>
+                      <p className="break-words text-xs font-bold text-[#DC2626]">{log.errorMessage}</p>
                     )}
                   </div>
 
@@ -138,17 +119,17 @@ export function ActivityTimeline({ logs }: ActivityTimelineProps) {
                       href={log.commitUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="nb-btn-sm inline-flex min-h-[34px] shrink-0 cursor-pointer items-center gap-1.5 self-start bg-white px-2.5 py-1 font-mono text-[11px] font-extrabold text-black sm:self-center"
+                      className="nb-btn-sm inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 self-start bg-white px-3 py-1 font-mono text-[11px] font-extrabold text-black sm:min-h-[34px] sm:self-center"
                     >
                       <span>{log.commitSha ? log.commitSha.slice(0, 7) : "Commit"}</span>
                       <ExternalLink className="h-3 w-3" aria-hidden="true" />
                     </a>
                   )}
                 </div>
-              </motion.li>
+              </li>
             );
           })}
-        </motion.ol>
+        </ol>
       )}
     </section>
   );

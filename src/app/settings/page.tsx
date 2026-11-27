@@ -241,7 +241,7 @@ export default function SettingsPage() {
                     type="time"
                     value={morningCronTime}
                     onChange={(e) => setMorningCronTime(e.target.value)}
-                    className="nb-input w-full px-3.5 py-2.5 font-mono text-xs font-bold"
+                    className="nb-input w-full px-3.5 py-2.5 font-mono text-base font-bold sm:text-xs"
                   />
                 </div>
                 <div>
@@ -253,7 +253,7 @@ export default function SettingsPage() {
                     type="time"
                     value={autopilotCronTime}
                     onChange={(e) => setAutopilotCronTime(e.target.value)}
-                    className="nb-input w-full px-3.5 py-2.5 font-mono text-xs font-bold"
+                    className="nb-input w-full px-3.5 py-2.5 font-mono text-base font-bold sm:text-xs"
                   />
                 </div>
               </div>
@@ -299,12 +299,12 @@ export default function SettingsPage() {
                     }
                   }}
                   placeholder="Tambah topik (mis. Rust, Shaders, FastAPI)..."
-                  className="nb-input flex-1 px-4 py-2 text-xs font-bold placeholder-black/45"
+                  className="nb-input min-w-0 flex-1 px-4 py-2 text-base font-bold placeholder-black/65 sm:text-xs"
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-4 py-2 text-xs font-extrabold uppercase text-black"
+                  className="nb-btn-sm inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-4 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Tambah</span>

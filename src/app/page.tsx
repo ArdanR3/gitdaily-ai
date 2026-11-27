@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
   RefreshCw,
@@ -73,9 +74,12 @@ export default function DashboardPage() {
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToast({ type, text });
-    setTimeout(() => {
-      setToast((curr) => (curr?.text === text ? null : curr));
-    }, 5500);
+    // WCAG 2.2.2: Error toasts stay visible until dismissed; only success toasts auto-dismiss
+    if (type === "success") {
+      setTimeout(() => {
+        setToast((curr) => (curr?.text === text ? null : curr));
+      }, 5500);
+    }
   }, []);
 
   const loadAll = useCallback(async () => {
@@ -262,32 +266,40 @@ export default function DashboardPage() {
       />
 
       <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6">
-        {toast && (
-          <div
-            role="status"
-            aria-live="polite"
-            className={`flex items-center justify-between gap-3 border-3 border-black px-4 py-3 text-xs font-extrabold text-black shadow-[5px_5px_0_0_#000] ${
-              toast.type === "success" ? "bg-[#88D498]" : "bg-[#FF6B6B]"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              {toast.type === "success" ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
-              )}
-              <span>{toast.text}</span>
-            </div>
-            <button
-              type="button"
-              aria-label="Tutup notifikasi"
-              onClick={() => setToast(null)}
-              className="cursor-pointer border-2 border-black bg-white p-1 text-black hover:bg-[#FFD23F]"
-            >
-              <X className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
-        )}
+        {/* Stable Live Region for Screen Readers + Slide-In Toast */}
+        <div role="status" aria-live="polite" aria-atomic="true">
+          <AnimatePresence>
+            {toast && (
+              <motion.div
+                key={toast.text}
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                className={`flex items-center justify-between gap-3 border-3 border-black px-4 py-3 text-xs font-extrabold text-black shadow-[5px_5px_0_0_#000] ${
+                  toast.type === "success" ? "bg-[#88D498]" : "bg-[#FF6B6B]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  {toast.type === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  )}
+                  <span>{toast.text}</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Tutup notifikasi"
+                  onClick={() => setToast(null)}
+                  className="flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center border-2 border-black bg-white p-1.5 text-black hover:bg-[#FFD23F] sm:min-h-[32px] sm:min-w-[32px]"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {initialLoading ? (
           <DashboardSkeleton />
@@ -295,7 +307,7 @@ export default function DashboardPage() {
           <>
             {/* Quest Roadmap Track + GITBOY-01 Neo-Brutalist Isometric Cartridge Deck */}
             <div className="grid items-start gap-6 xl:grid-cols-12">
-              <div className="xl:col-span-7">
+              <div className="min-w-0 xl:col-span-7">
                 <QuestRoadmapTrack
                   repoCount={repoStats.total}
                   allowedCount={repoStats.allowedCount}
@@ -313,7 +325,7 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="xl:col-span-5">
+              <div className="min-w-0 xl:col-span-5">
                 <GitBoyDeckFigure
                   selectedStage={selectedStage}
                   onSelectStage={setSelectedStage}
@@ -430,16 +442,19 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {previewItem && (
-        <CodePreviewModal
-          suggestion={previewItem}
-          onClose={() => setPreviewItem(null)}
-          onSaved={(updated) => {
-            setSuggestions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-            showToast("success", "Perubahan kode & commit message berhasil disimpan.");
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {previewItem && (
+          <CodePreviewModal
+            key={previewItem.id}
+            suggestion={previewItem}
+            onClose={() => setPreviewItem(null)}
+            onSaved={(updated) => {
+              setSuggestions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+              showToast("success", "Perubahan kode & commit message berhasil disimpan.");
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

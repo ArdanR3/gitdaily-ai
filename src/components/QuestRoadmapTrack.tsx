@@ -376,13 +376,13 @@ export function QuestRoadmapTrack({
 
       {/* Interactive Stage Detail Box */}
       <div className="mt-5 border-3 border-black bg-[#FFF3C4] p-4 shadow-[4px_4px_0_0_#000]">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeDetail.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.14 }}
+            transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
             className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">

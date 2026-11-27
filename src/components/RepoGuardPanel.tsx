@@ -113,14 +113,14 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
               aria-label="Cari repository"
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari nama repo atau bahasa..."
-              className="nb-input w-full py-2 pl-9 pr-8 text-xs font-bold placeholder-black/45"
+              className="nb-input w-full py-2 pl-9 pr-8 text-base font-bold placeholder-black/65 sm:text-xs"
             />
             {query && (
               <button
                 type="button"
                 aria-label="Hapus pencarian"
                 onClick={() => setQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer p-1 text-black hover:bg-[#FFD23F]"
+                className="absolute right-2 top-1/2 flex min-h-[32px] min-w-[32px] -translate-y-1/2 cursor-pointer items-center justify-center p-1 text-black hover:bg-[#FFD23F]"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
@@ -147,14 +147,14 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setFilter(tab.key)}
-                  className={`relative inline-flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-extrabold uppercase transition-colors ${
+                  className={`relative inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 px-3 py-1.5 font-extrabold uppercase transition-colors sm:min-h-[32px] ${
                     active ? "text-[#FFD23F]" : "text-black hover:bg-white"
                   }`}
                 >
                   {active && (
                     <motion.span
                       layoutId="nbRepoGuardTab"
-                      transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                      transition={{ type: "spring", duration: 0.35, bounce: 0 }}
                       className="absolute inset-0 bg-black"
                     />
                   )}
@@ -180,7 +180,7 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
             : "Tidak ada repository yang cocok dengan filter atau pencarian."}
         </div>
       ) : (
-        <div className="max-h-[430px] divide-y-2 divide-black overflow-y-auto border-2 border-black bg-[#FFFDF5]">
+        <div className="max-h-[430px] divide-y-2 divide-black overflow-y-auto overscroll-contain border-2 border-black bg-[#FFFDF5]">
           {filtered.map((repo) => {
             const busy = togglingId === repo.id;
             const locked = repo.isProtected || repo.isPrivate;
@@ -193,7 +193,7 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-mono text-xs font-extrabold text-black">
+                    <span className="break-all font-mono text-xs font-extrabold text-black">
                       {repo.name}
                     </span>
                     {repo.language && (
@@ -212,7 +212,7 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
                   </div>
 
                   {locked && (
-                    <p className="mt-1 truncate text-[11px] font-bold text-[#B91C1C]">
+                    <p className="mt-1 break-words text-[11px] font-bold leading-snug text-[#B91C1C]">
                       {repo.isPrivate
                         ? "Dikunci permanen: repository Private tidak dapat disentuh AI"
                         : repo.protectionReason || "Dilindungi manual oleh pengguna"}
@@ -230,7 +230,7 @@ export function RepoGuardPanel({ repos, onToggleGuard }: RepoGuardPanelProps) {
                       : `Ubah guard untuk ${repo.name}`
                   }
                   onClick={() => handleToggle(repo)}
-                  className={`nb-btn-sm inline-flex min-h-[34px] shrink-0 items-center gap-1.5 px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black ${
+                  className={`nb-btn-sm inline-flex min-h-[44px] shrink-0 items-center gap-1.5 px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black sm:min-h-[34px] ${
                     repo.isPrivate
                       ? "cursor-not-allowed bg-[#FF6B6B] opacity-85 shadow-none"
                       : repo.isProtected

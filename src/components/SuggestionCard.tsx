@@ -33,6 +33,7 @@ export function SuggestionCard({
 }: SuggestionCardProps) {
   const [executing, setExecuting] = useState(false);
   const [updatingVis, setUpdatingVis] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const files: GeneratedFile[] = (() => {
     try {
@@ -56,13 +57,9 @@ export function SuggestionCard({
     }
   }
 
-  async function handleApproveClick() {
+  async function handleConfirmPush() {
     if (!canExecute) return;
-    const actionLabel = isCreate
-      ? `membuat repository ${suggestion.visibility.toUpperCase()} baru "${suggestion.targetRepo}"`
-      : `push commit ke repository "${suggestion.targetRepo}"`;
-    if (!window.confirm(`Konfirmasi: lanjutkan ${actionLabel} di akun ArdanR3?`)) return;
-
+    setConfirming(false);
     setExecuting(true);
     try {
       await onExecute(suggestion.id);
@@ -177,34 +174,68 @@ export function SuggestionCard({
         </div>
       </div>
 
-      {/* Action Footer */}
-      <div className="flex flex-col gap-3 border-t-3 border-black bg-[#F5F0E8] px-5 py-4 sm:flex-row">
-        <button
-          type="button"
-          onClick={() => onPreview(suggestion)}
-          className="nb-btn inline-flex min-h-[42px] flex-1 cursor-pointer items-center justify-center gap-2 bg-white px-4 py-2 text-xs font-extrabold uppercase text-black"
-        >
-          <Code2 className="h-4 w-4" aria-hidden="true" />
-          <span>Preview &amp; Edit</span>
-        </button>
+      {/* Action Footer + Inline Neo-Brutalist Confirmation */}
+      <div className="border-t-3 border-black bg-[#F5F0E8] px-5 py-4">
+        {confirming ? (
+          <div
+            role="region"
+            aria-label="Konfirmasi push ke GitHub"
+            className="space-y-3 border-2 border-black bg-[#FFF3C4] p-3.5 shadow-[4px_4px_0_0_#000]"
+          >
+            <p className="text-xs font-extrabold leading-relaxed text-black">
+              {isCreate
+                ? `Buat repository ${suggestion.visibility.toUpperCase()} baru "${suggestion.targetRepo}" di akun @ArdanR3?`
+                : `Push commit ini langsung ke repository "${suggestion.targetRepo}" di akun @ArdanR3?`}
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleConfirmPush}
+                disabled={executing}
+                className="nb-btn-sm inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-1.5 bg-[#88D498] px-3 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
+              >
+                <Rocket className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Push ke ArdanR3</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="nb-btn-sm inline-flex min-h-[44px] cursor-pointer items-center justify-center bg-white px-4 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[38px]"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => onPreview(suggestion)}
+              className="nb-btn inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 bg-white px-4 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[42px]"
+            >
+              <Code2 className="h-4 w-4" aria-hidden="true" />
+              <span>Preview &amp; Edit</span>
+            </button>
 
-        <button
-          type="button"
-          disabled={!canExecute}
-          onClick={handleApproveClick}
-          className={`nb-btn inline-flex min-h-[42px] flex-1 items-center justify-center gap-2 px-4 py-2 text-xs font-extrabold uppercase text-black ${
-            canExecute
-              ? "cursor-pointer bg-[#88D498]"
-              : "cursor-not-allowed bg-[#E5E5E5] opacity-60 shadow-none"
-          }`}
-        >
-          {executing ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            <Rocket className="h-4 w-4" aria-hidden="true" />
-          )}
-          <span>{executing ? "Pushing..." : isExecuted ? "Sudah Push" : "Approve & Push"}</span>
-        </button>
+            <button
+              type="button"
+              disabled={!canExecute}
+              onClick={() => setConfirming(true)}
+              className={`nb-btn inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 px-4 py-2 text-xs font-extrabold uppercase text-black sm:min-h-[42px] ${
+                canExecute
+                  ? "cursor-pointer bg-[#88D498]"
+                  : "cursor-not-allowed bg-[#E5E5E5] opacity-60 shadow-none"
+              }`}
+            >
+              {executing ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Rocket className="h-4 w-4" aria-hidden="true" />
+              )}
+              <span>{executing ? "Pushing..." : isExecuted ? "Sudah Push" : "Approve & Push"}</span>
+            </button>
+          </div>
+        )}
       </div>
     </article>
   );

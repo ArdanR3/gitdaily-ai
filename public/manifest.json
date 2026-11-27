@@ -4,8 +4,8 @@
   "description": "Asisten otomasi harian GitHub bertenaga Gemini AI untuk akun ArdanR3.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
+  "background_color": "#FFFDF5",
+  "theme_color": "#FFD23F",
   "orientation": "portrait-primary",
   "icons": [
     {

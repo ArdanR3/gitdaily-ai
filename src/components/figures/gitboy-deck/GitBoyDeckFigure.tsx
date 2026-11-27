@@ -481,10 +481,10 @@ export function GitBoyDeckFigure({
               leftFill="#18181b"
               strokeWidth={1.6}
             />
-            {/* Pulsing AI Core Indicator on Chip */}
+            {/* Pulsing AI Core Indicator on Chip — only animates when Explode View is open */}
             <motion.polygon
-              animate={{ opacity: [0.55, 1, 0.55] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              animate={exploded ? { opacity: [0.55, 1, 0.55] } : { opacity: 1 }}
+              transition={exploded ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : { duration: 0.15 }}
               points={pts([
                 [-8, -10, 20.4],
                 [8, -10, 20.4],
@@ -936,8 +936,40 @@ export function GitBoyDeckFigure({
         </svg>
       </div>
 
+      {/* Accessible Native Keyboard/Touch Stage Selector */}
+      <div
+        role="tablist"
+        aria-label="Pilih komponen anatomi GITBOY-01"
+        className="grid grid-cols-4 divide-x-2 divide-[#111111] border-t-3 border-[#111111] bg-[#F5F0E8] font-mono text-[10px]"
+      >
+        {(
+          [
+            { id: "01", short: "01 SYNC", activeBg: "bg-[#60a5fa]" },
+            { id: "02", short: "02 CART", activeBg: "bg-[#c4b5fd]" },
+            { id: "03", short: "03 AI", activeBg: "bg-[#facc15]" },
+            { id: "04", short: "04 PUSH", activeBg: isDone ? "bg-[#4ade80]" : "bg-[#fb7185]" },
+          ] as const
+        ).map((tab) => {
+          const active = selectedStage === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onSelectStage(tab.id)}
+              className={`min-h-[44px] cursor-pointer px-2 py-1.5 font-extrabold uppercase text-[#111111] transition-colors duration-150 sm:min-h-[32px] ${
+                active ? tab.activeBg : "bg-white hover:bg-[#FFF3C4]"
+              }`}
+            >
+              {tab.short}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Micro Live Telemetry Strip (STAGE · METRIC · STATUS) */}
-      <div className="grid grid-cols-3 divide-x-2 divide-[#111111] border-t-3 border-[#111111] bg-white font-mono text-[10px]">
+      <div className="grid grid-cols-3 divide-x-2 divide-[#111111] border-t-2 border-[#111111] bg-white font-mono text-[10px]">
         <div className="px-3 py-2">
           <div className="font-bold uppercase text-black/55">STAGE</div>
           <div className="mt-0.5 truncate font-extrabold text-[#111111]">{currentMeta.label}</div>

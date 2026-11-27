@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Syne, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { MotionProvider } from "@/components/MotionProvider";
 import "./globals.css";
 
 const syne = Syne({
@@ -42,6 +43,7 @@ export const viewport: Viewport = {
   themeColor: "#FFD23F",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -51,8 +53,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${syne.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-[#FFFDF5] font-sans text-black antialiased selection:bg-[#FFD23F] selection:text-black">
-        {children}
+      <body className="min-h-screen bg-[#FFFDF5] pb-[env(safe-area-inset-bottom)] font-sans text-black antialiased selection:bg-[#FFD23F] selection:text-black">
+        <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
   );
