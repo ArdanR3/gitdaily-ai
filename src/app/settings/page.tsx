@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Shield,
   Bot,
+  Sliders,
 } from "lucide-react";
 
 interface SettingsPayload {
@@ -122,64 +123,84 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117]">
-      <header className="border-b border-[#30363d] bg-[#161b22]">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
+    <div className="nb-grid-bg min-h-screen">
+      {/* Bold Neubrutalist Blue Header */}
+      <header className="border-b-4 border-black bg-[#74B9FF] text-black">
+        <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+          <div className="flex items-center justify-between gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-2.5 py-1.5 text-xs font-medium text-[#c9d1d9] hover:border-[#8b949e]"
+              className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Dashboard
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Dashboard</span>
             </Link>
-            <h1 className="text-base font-semibold text-[#f0f6fc]">Settings · GitDaily AI</h1>
+            <span className="border-2 border-black bg-black px-3 py-1 font-mono text-[11px] font-extrabold text-[#FFD23F]">
+              MODE: {mode}
+            </span>
+          </div>
+
+          <div className="mt-5 flex items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center border-3 border-black bg-[#FFD23F] text-black shadow-[4px_4px_0_0_#000]">
+              <Sliders className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-black sm:text-3xl">
+                Settings · Control Panel
+              </h1>
+              <p className="mt-0.5 text-xs font-semibold text-black/80 sm:text-sm">
+                Atur mode operasi, jadwal WIB, preferensi tech stack AI, dan notifikasi Telegram/Discord.
+              </p>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {alert && (
           <div
-            className={`mb-5 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium ${
-              alert.type === "success"
-                ? "border-[#238636]/50 bg-[#238636]/15 text-[#3fb950]"
-                : "border-[#f85149]/50 bg-[#f85149]/15 text-[#ff7b72]"
+            role="status"
+            className={`mb-5 flex items-center gap-2.5 border-3 border-black px-4 py-3 text-xs font-extrabold text-black shadow-[5px_5px_0_0_#000] ${
+              alert.type === "success" ? "bg-[#88D498]" : "bg-[#FF6B6B]"
             }`}
           >
-            {alert.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {alert.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
             <span>{alert.text}</span>
           </div>
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-xs text-[#8b949e]">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#58a6ff]" />
+          <div className="flex items-center justify-center py-16 text-xs font-bold text-black">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Memuat pengaturan...
           </div>
         ) : (
           <form onSubmit={handleSave} className="space-y-6">
             {/* Operation Mode */}
-            <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-              <h2 className="text-sm font-semibold text-[#f0f6fc]">Mode Operasi</h2>
-              <p className="mt-0.5 text-xs text-[#8b949e]">
-                Pilih apakah bot menunggu persetujuan manual atau otomatis push jam 21:00 WIB.
+            <section className="nb-card p-5 sm:p-6">
+              <h2 className="font-display text-base font-extrabold uppercase text-black">Mode Operasi</h2>
+              <p className="mt-0.5 text-xs font-medium text-black/75">
+                Pilih apakah bot menunggu persetujuan manual atau otomatis push pada jam Auto-Pilot WIB.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={() => setMode("APPROVAL")}
-                  className={`flex items-start gap-3 rounded-lg border p-3.5 text-left transition ${
-                    mode === "APPROVAL"
-                      ? "border-[#58a6ff] bg-[#1f6feb]/10"
-                      : "border-[#30363d] bg-[#0d1117] hover:border-[#484f58]"
+                  className={`flex cursor-pointer items-start gap-3 border-3 border-black p-4 text-left shadow-[4px_4px_0_0_#000] transition ${
+                    mode === "APPROVAL" ? "bg-[#74B9FF]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
                   }`}
                 >
-                  <Shield className="mt-0.5 h-4 w-4 shrink-0 text-[#58a6ff]" />
+                  <Shield className="mt-0.5 h-5 w-5 shrink-0 text-black" aria-hidden="true" />
                   <div>
-                    <div className="text-xs font-semibold text-[#f0f6fc]">Approval Mode (Default)</div>
-                    <p className="mt-0.5 text-[11px] text-[#8b949e]">
-                      Push hanya dieksekusi setelah kamu klik Approve di dashboard.
+                    <div className="text-xs font-extrabold uppercase text-black">
+                      Approval Mode (Default)
+                    </div>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-black/80">
+                      Push hanya dieksekusi setelah kamu klik Approve &amp; Push di dashboard.
                     </p>
                   </div>
                 </button>
@@ -187,16 +208,14 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setMode("AUTOPILOT")}
-                  className={`flex items-start gap-3 rounded-lg border p-3.5 text-left transition ${
-                    mode === "AUTOPILOT"
-                      ? "border-[#a371f7] bg-[#a371f7]/10"
-                      : "border-[#30363d] bg-[#0d1117] hover:border-[#484f58]"
+                  className={`flex cursor-pointer items-start gap-3 border-3 border-black p-4 text-left shadow-[4px_4px_0_0_#000] transition ${
+                    mode === "AUTOPILOT" ? "bg-[#B8A9FA]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
                   }`}
                 >
-                  <Bot className="mt-0.5 h-4 w-4 shrink-0 text-[#d2a8ff]" />
+                  <Bot className="mt-0.5 h-5 w-5 shrink-0 text-black" aria-hidden="true" />
                   <div>
-                    <div className="text-xs font-semibold text-[#f0f6fc]">Auto-Pilot Mode</div>
-                    <p className="mt-0.5 text-[11px] text-[#8b949e]">
+                    <div className="text-xs font-extrabold uppercase text-black">Auto-Pilot Mode</div>
+                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-black/80">
                       Otomatis push 1 saran aman jika belum ada aktivitas hingga {autopilotCronTime} WIB.
                     </p>
                   </div>
@@ -205,59 +224,70 @@ export default function SettingsPage() {
             </section>
 
             {/* Schedule WIB */}
-            <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-              <h2 className="text-sm font-semibold text-[#f0f6fc]">Jadwal Harian (WIB)</h2>
-              <p className="mt-0.5 text-xs text-[#8b949e]">
-                Ditampilkan sebagai countdown di dashboard (eksekusi cloud mengikuti cron GitHub Actions).
+            <section className="nb-card p-5 sm:p-6">
+              <h2 className="font-display text-base font-extrabold uppercase text-black">
+                Jadwal Harian (WIB)
+              </h2>
+              <p className="mt-0.5 text-xs font-medium text-black/75">
+                Ditampilkan sebagai countdown di header dashboard (cron cloud via GitHub Actions).
               </p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs text-[#c9d1d9]">Generate Saran Pagi (WIB)</label>
+                  <label htmlFor="morning-time" className="mb-1.5 block text-xs font-extrabold uppercase text-black">
+                    Generate Saran Pagi (WIB)
+                  </label>
                   <input
+                    id="morning-time"
                     type="time"
                     value={morningCronTime}
                     onChange={(e) => setMorningCronTime(e.target.value)}
-                    className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2 font-mono text-xs text-[#f0f6fc] outline-none focus:border-[#58a6ff]"
+                    className="nb-input w-full px-3.5 py-2.5 font-mono text-xs font-bold"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-[#c9d1d9]">Fallback Auto-Pilot (WIB)</label>
+                  <label htmlFor="autopilot-time" className="mb-1.5 block text-xs font-extrabold uppercase text-black">
+                    Fallback Auto-Pilot (WIB)
+                  </label>
                   <input
+                    id="autopilot-time"
                     type="time"
                     value={autopilotCronTime}
                     onChange={(e) => setAutopilotCronTime(e.target.value)}
-                    className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2 font-mono text-xs text-[#f0f6fc] outline-none focus:border-[#58a6ff]"
+                    className="nb-input w-full px-3.5 py-2.5 font-mono text-xs font-bold"
                   />
                 </div>
               </div>
             </section>
 
             {/* Tech Preferences */}
-            <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-              <h2 className="text-sm font-semibold text-[#f0f6fc]">Preferensi Tech Stack & Topik AI</h2>
-              <p className="mt-0.5 text-xs text-[#8b949e]">
-                Gemini akan menyesuaikan saran repo baru dan update berdasarkan tag ini.
+            <section className="nb-card p-5 sm:p-6">
+              <h2 className="font-display text-base font-extrabold uppercase text-black">
+                Preferensi Tech Stack &amp; Topik AI
+              </h2>
+              <p className="mt-0.5 text-xs font-medium text-black/75">
+                AI akan menyesuaikan saran repo baru dan update berdasarkan tag minat ini.
               </p>
 
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3.5 flex flex-wrap gap-2">
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#30363d] bg-[#0d1117] px-3 py-1 text-xs text-[#c9d1d9]"
+                    className="inline-flex items-center gap-1.5 border-2 border-black bg-[#FFD23F] px-3 py-1 font-mono text-xs font-extrabold text-black shadow-[2px_2px_0_0_#000]"
                   >
                     {tag}
                     <button
                       type="button"
+                      aria-label={`Hapus tag ${tag}`}
                       onClick={() => removeTag(tag)}
-                      className="text-[#8b949e] hover:text-[#ff7b72]"
+                      className="cursor-pointer border border-black bg-white p-0.5 text-black hover:bg-[#FF6B6B]"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden="true" />
                     </button>
                   </span>
                 ))}
               </div>
 
-              <div className="mt-3 flex gap-2">
+              <div className="mt-4 flex gap-2.5">
                 <input
                   type="text"
                   value={newTag}
@@ -269,49 +299,49 @@ export default function SettingsPage() {
                     }
                   }}
                   placeholder="Tambah topik (mis. Rust, Shaders, FastAPI)..."
-                  className="flex-1 rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2 text-xs text-[#f0f6fc] placeholder-[#6e7681] outline-none focus:border-[#58a6ff]"
+                  className="nb-input flex-1 px-4 py-2 text-xs font-bold placeholder-black/45"
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-medium text-[#c9d1d9] hover:bg-[#30363d]"
+                  className="nb-btn-sm inline-flex cursor-pointer items-center gap-1.5 bg-[#B8A9FA] px-4 py-2 text-xs font-extrabold uppercase text-black"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  Tambah
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Tambah</span>
                 </button>
               </div>
             </section>
 
             {/* Notifications */}
-            <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <section className="nb-card p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-semibold text-[#f0f6fc]">Notifikasi Harian</h2>
-                  <p className="mt-0.5 text-xs text-[#8b949e]">
-                    Kirim ringkasan saran pagi & laporan status push via Telegram atau Discord.
+                  <h2 className="font-display text-base font-extrabold uppercase text-black">
+                    Notifikasi Harian
+                  </h2>
+                  <p className="mt-0.5 text-xs font-medium text-black/75">
+                    Kirim ringkasan saran pagi &amp; laporan status push via Telegram atau Discord.
                   </p>
                 </div>
                 <button
                   type="button"
                   disabled={testing || channel === "NONE"}
                   onClick={handleTestNotification}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-3 py-1.5 text-xs font-medium text-[#c9d1d9] hover:border-[#58a6ff] disabled:opacity-45"
+                  className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-[#FFD23F] px-3.5 py-1.5 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BellRing className="h-3.5 w-3.5" />}
-                  Test Notification
+                  <span>Test Notification</span>
                 </button>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="mt-4 grid grid-cols-3 gap-3">
                 {(["TELEGRAM", "DISCORD", "NONE"] as const).map((ch) => (
                   <button
                     key={ch}
                     type="button"
                     onClick={() => setChannel(ch)}
-                    className={`rounded-lg border py-2 text-xs font-medium transition ${
-                      channel === ch
-                        ? "border-[#58a6ff] bg-[#1f6feb]/15 text-[#79c0ff]"
-                        : "border-[#30363d] bg-[#0d1117] text-[#8b949e] hover:text-[#c9d1d9]"
+                    className={`nb-btn-sm cursor-pointer py-2.5 font-mono text-xs font-extrabold uppercase text-black ${
+                      channel === ch ? "bg-black text-[#FFD23F]" : "bg-[#FFFDF5] hover:bg-[#FFF3C4]"
                     }`}
                   >
                     {ch}
@@ -324,10 +354,10 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#238636] px-5 py-2.5 text-xs font-medium text-white transition hover:bg-[#2ea043] disabled:opacity-50"
+                className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center gap-2 bg-[#88D498] px-6 py-2.5 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {saving ? "Menyimpan..." : "Simpan Pengaturan"}
+                <span>{saving ? "Menyimpan..." : "Simpan Pengaturan"}</span>
               </button>
             </div>
           </form>

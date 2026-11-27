@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Lock, ArrowRight, Loader2, GitBranch } from "lucide-react";
+import { Lock, ArrowRight, Loader2, Terminal } from "lucide-react";
 
 function sanitizeNextPath(raw: string | null): string {
   if (!raw) return "/";
@@ -47,23 +47,32 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0d1117] px-4">
-      <div className="w-full max-w-sm rounded-xl border border-[#30363d] bg-[#161b22] p-6 shadow-2xl">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-[#30363d] bg-[#0d1117] text-[#58a6ff]">
-            <GitBranch className="h-6 w-6" />
+    <div className="nb-grid-bg flex min-h-screen items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md border-4 border-black bg-white shadow-[10px_10px_0_0_#000]">
+        {/* Bold Yellow Neubrutalist Header */}
+        <div className="border-b-4 border-black bg-[#FFD23F] px-6 py-7 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center border-3 border-black bg-black text-[#FFD23F] shadow-[4px_4px_0_0_#FFF]">
+            <Terminal className="h-7 w-7" aria-hidden="true" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-[#f0f6fc]">GitDaily AI</h1>
-          <p className="mt-1 text-xs text-[#8b949e]">Dashboard Pribadi · @ArdanR3</p>
+          <h1 className="font-display text-3xl font-extrabold uppercase tracking-tight text-black">
+            GitDaily AI
+          </h1>
+          <span className="mt-2 inline-block border-2 border-black bg-white px-3 py-0.5 font-mono text-xs font-extrabold text-black">
+            PRIVATE CONSOLE · @ArdanR3
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
           <div>
-            <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-[#c9d1d9]">
+            <label htmlFor="password" className="mb-1.5 block text-xs font-extrabold uppercase text-black">
               Dashboard Password / PIN
             </label>
             <div className="relative">
-              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b949e]" />
+              <Lock
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-black"
+                aria-hidden="true"
+              />
               <input
                 id="password"
                 type="password"
@@ -72,13 +81,16 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Masukkan password..."
-                className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] py-2.5 pl-9 pr-3 text-sm text-[#f0f6fc] placeholder-[#6e7681] outline-none transition focus:border-[#58a6ff] focus:ring-2 focus:ring-[#58a6ff]/20"
+                className="nb-input w-full py-3 pl-10 pr-3.5 text-sm font-bold placeholder-black/45"
               />
             </div>
           </div>
 
           {error && (
-            <div className="rounded-lg border border-[#f85149]/40 bg-[#f85149]/10 px-3 py-2 text-xs text-[#ff7b72]">
+            <div
+              role="alert"
+              className="border-2 border-black bg-[#FF6B6B] px-3.5 py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0_0_#000]"
+            >
               {error}
             </div>
           )}
@@ -86,10 +98,10 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading || !password}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#238636] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#2ea043] disabled:cursor-not-allowed disabled:opacity-50"
+            className="nb-btn flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 bg-[#88D498] px-5 py-2.5 text-sm font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            {loading ? "Memverifikasi..." : "Masuk ke Dashboard"}
+            <span>{loading ? "Memverifikasi..." : "Masuk ke Dashboard"}</span>
           </button>
         </form>
       </div>
@@ -99,7 +111,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d1117]" />}>
+    <Suspense fallback={<div className="nb-grid-bg min-h-screen" />}>
       <LoginForm />
     </Suspense>
   );

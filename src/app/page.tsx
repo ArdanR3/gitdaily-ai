@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
 import {
   RefreshCw,
   Sparkles,
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Flame,
-  Clock,
-  ShieldCheck,
-  Hourglass,
   X,
+  Swords,
 } from "lucide-react";
 import { HeaderProfile, type ProfileData } from "@/components/HeaderProfile";
+import { QuestRoadmapTrack, type StudyMaterialSummary } from "@/components/QuestRoadmapTrack";
+import { GitBoyDeckFigure, type QuestStageId } from "@/components/figures/gitboy-deck/GitBoyDeckFigure";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { CodePreviewModal, type SuggestionItem } from "@/components/CodePreviewModal";
 import { RepoGuardPanel, type RepoItem } from "@/components/RepoGuardPanel";
@@ -27,48 +27,25 @@ interface ToastMessage {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6" aria-label="Memuat data dashboard" role="status">
-      {/* KPI Skeleton */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-24 animate-pulse rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-4"
-          >
-            <div className="h-3 w-20 rounded bg-[var(--color-muted)]" />
-            <div className="mt-3 h-6 w-28 rounded bg-[var(--color-muted)]" />
-            <div className="mt-2 h-2.5 w-24 rounded bg-[var(--color-muted)]/70" />
-          </div>
-        ))}
+    <div className="space-y-6" aria-label="Memuat Dashboard GitDaily AI" role="status">
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="nb-card h-72 animate-pulse p-6 xl:col-span-7">
+          <div className="h-5 w-40 border-2 border-black bg-[#FFD23F]" />
+          <div className="mt-6 h-40 w-full border-2 border-black bg-[#F5F0E8]" />
+        </div>
+        <div className="nb-card h-72 animate-pulse p-6 xl:col-span-5">
+          <div className="h-5 w-32 border-2 border-black bg-[#B8A9FA]" />
+          <div className="mt-6 h-40 w-full border-2 border-black bg-[#F5F0E8]" />
+        </div>
       </div>
 
-      {/* Suggestions Skeleton */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="h-64 animate-pulse rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-5"
-          >
-            <div className="h-5 w-28 rounded bg-[var(--color-muted)]" />
-            <div className="mt-4 h-5 w-48 rounded bg-[var(--color-muted)]" />
-            <div className="mt-3 h-10 w-full rounded-lg bg-[var(--color-background)]" />
-            <div className="mt-4 h-12 w-full rounded bg-[var(--color-muted)]/60" />
-          </div>
-        ))}
-      </div>
-
-      {/* Lower Panels Skeleton */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="h-72 animate-pulse rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-5"
-          >
-            <div className="h-4 w-36 rounded bg-[var(--color-muted)]" />
-            <div className="mt-4 space-y-2.5">
-              {[0, 1, 2, 3].map((row) => (
-                <div key={row} className="h-11 rounded-lg bg-[var(--color-background)]" />
-              ))}
+          <div key={i} className="nb-card h-72 animate-pulse">
+            <div className="h-20 border-b-3 border-black bg-[#74B9FF]" />
+            <div className="space-y-3 p-5">
+              <div className="h-10 border-2 border-black bg-[#F5F0E8]" />
+              <div className="h-14 border-2 border-black bg-[#F5F0E8]" />
             </div>
           </div>
         ))}
@@ -85,12 +62,14 @@ export default function DashboardPage() {
   const [executedToday, setExecutedToday] = useState(false);
   const [repos, setRepos] = useState<RepoItem[]>([]);
   const [logs, setLogs] = useState<ActivityLogItem[]>([]);
+  const [materials, setMaterials] = useState<StudyMaterialSummary[]>([]);
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [previewItem, setPreviewItem] = useState<SuggestionItem | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [selectedStage, setSelectedStage] = useState<QuestStageId>("03");
 
   const showToast = useCallback((type: "success" | "error", text: string) => {
     setToast({ type, text });
@@ -101,11 +80,12 @@ export default function DashboardPage() {
 
   const loadAll = useCallback(async () => {
     try {
-      const [profRes, suggRes, repoRes, logRes] = await Promise.all([
+      const [profRes, suggRes, repoRes, logRes, matRes] = await Promise.all([
         fetch("/api/github/profile"),
         fetch("/api/suggestions"),
         fetch("/api/repos"),
         fetch("/api/logs"),
+        fetch("/api/materials"),
       ]);
 
       if (profRes.status === 401) {
@@ -142,6 +122,11 @@ export default function DashboardPage() {
         const lData = (await logRes.json()) as { logs: ActivityLogItem[] };
         setLogs(lData.logs || []);
       }
+
+      if (matRes.ok) {
+        const mData = (await matRes.json()) as { materials: StudyMaterialSummary[] };
+        setMaterials(mData.materials || []);
+      }
     } catch {
       showToast("error", "Gagal memuat data dashboard. Pastikan konfigurasi & database aktif.");
     } finally {
@@ -164,6 +149,9 @@ export default function DashboardPage() {
       allowedCount: repos.length - protectedCount,
     };
   }, [repos]);
+
+  const activeMaterials = useMemo(() => materials.filter((m) => m.isActive), [materials]);
+  const primaryActiveMaterial = activeMaterials[0] ?? null;
 
   async function handleSync() {
     setSyncing(true);
@@ -194,7 +182,7 @@ export default function DashboardPage() {
         return;
       }
       setSuggestions(data.suggestions || []);
-      showToast("success", "Saran harian baru dari AI siap ditinjau!");
+      showToast("success", "Saran quest harian baru dari AI siap dipilih!");
     } catch {
       showToast("error", "Kesalahan jaringan saat memanggil AI.");
     } finally {
@@ -225,7 +213,15 @@ export default function DashboardPage() {
         await loadAll();
         return;
       }
-      showToast("success", `Berhasil push ke github.com/ArdanR3/${data.pushResult?.repo}!`);
+      if (typeof window !== "undefined" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        void confetti({
+          particleCount: 80,
+          spread: 75,
+          origin: { y: 0.6 },
+          colors: ["#FFD23F", "#88D498", "#FF6B6B", "#74B9FF", "#B8A9FA", "#000000"],
+        });
+      }
+      showToast("success", `Quest Cleared! Berhasil push ke github.com/ArdanR3/${data.pushResult?.repo}!`);
       await loadAll();
     } catch {
       showToast("error", "Kesalahan jaringan saat eksekusi push.");
@@ -255,7 +251,7 @@ export default function DashboardPage() {
   const isDone = profileData?.statusToday === "DONE" || executedToday;
 
   return (
-    <div className="dev-grid-bg min-h-screen bg-[var(--color-background)]">
+    <div className="nb-grid-bg min-h-screen">
       <HeaderProfile
         data={profileData}
         syncing={syncing}
@@ -265,15 +261,13 @@ export default function DashboardPage() {
         onLogout={handleLogout}
       />
 
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:py-8">
+      <main className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6">
         {toast && (
           <div
             role="status"
             aria-live="polite"
-            className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs font-medium ${
-              toast.type === "success"
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                : "border-red-500/40 bg-red-500/10 text-red-300"
+            className={`flex items-center justify-between gap-3 border-3 border-black px-4 py-3 text-xs font-extrabold text-black shadow-[5px_5px_0_0_#000] ${
+              toast.type === "success" ? "bg-[#88D498]" : "bg-[#FF6B6B]"
             }`}
           >
             <div className="flex items-center gap-2.5">
@@ -288,7 +282,7 @@ export default function DashboardPage() {
               type="button"
               aria-label="Tutup notifikasi"
               onClick={() => setToast(null)}
-              className="cursor-pointer rounded p-1 opacity-75 transition-opacity hover:opacity-100"
+              className="cursor-pointer border-2 border-black bg-white p-1 text-black hover:bg-[#FFD23F]"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -299,153 +293,120 @@ export default function DashboardPage() {
           <DashboardSkeleton />
         ) : (
           <>
-            {/* Operations Telemetry Strip */}
-            <section aria-label="Ringkasan status harian" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {/* Daily Target Status */}
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-4">
-                <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted-foreground)]">
-                  <span>Daily Status</span>
-                  {isDone ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
-                  ) : (
-                    <Hourglass className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                  )}
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span
-                    className={`font-mono text-xl font-bold ${isDone ? "text-emerald-400" : "text-amber-300"}`}
-                  >
-                    {isDone ? "DONE" : "PENDING"}
-                  </span>
-                </div>
-                <p className="mt-1 font-mono text-[11px] text-slate-400">
-                  {profileData ? `${profileData.todayKey} · ${isDone ? "1/1 push" : "0/1 push"}` : "Menunggu status"}
-                </p>
+            {/* Quest Roadmap Track + GITBOY-01 Neo-Brutalist Isometric Cartridge Deck */}
+            <div className="grid items-start gap-6 xl:grid-cols-12">
+              <div className="xl:col-span-7">
+                <QuestRoadmapTrack
+                  repoCount={repoStats.total}
+                  allowedCount={repoStats.allowedCount}
+                  protectedCount={repoStats.protectedCount}
+                  activeMaterial={primaryActiveMaterial}
+                  activeMaterialsCount={activeMaterials.length}
+                  suggestionCount={suggestions.length}
+                  executedToday={isDone}
+                  todayKey={profileData?.todayKey || "Hari Ini"}
+                  streak={profileData?.streak ?? 0}
+                  selectedStage={selectedStage}
+                  onSelectStage={setSelectedStage}
+                  onQuickSync={handleSync}
+                  onQuickGenerate={handleGenerate}
+                />
               </div>
 
-              {/* Active Streak */}
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-4">
-                <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted-foreground)]">
-                  <span>Commit Streak</span>
-                  <Flame className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="font-mono text-xl font-bold text-[var(--color-foreground)]">
-                    {profileData?.streak ?? 0}
-                  </span>
-                  <span className="text-xs font-medium text-slate-400">hari berturut</span>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-400">
-                  {logs.length} total eksekusi tercatat
-                </p>
+              <div className="xl:col-span-5">
+                <GitBoyDeckFigure
+                  selectedStage={selectedStage}
+                  onSelectStage={setSelectedStage}
+                  telemetry={{
+                    streak: profileData?.streak ?? 0,
+                    executedToday: isDone,
+                    repoCount: repoStats.total,
+                    allowedCount: repoStats.allowedCount,
+                    protectedCount: repoStats.protectedCount,
+                    activeMaterial: primaryActiveMaterial,
+                    suggestionCount: suggestions.length,
+                  }}
+                />
               </div>
+            </div>
 
-              {/* Next Schedule */}
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-4">
-                <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted-foreground)]">
-                  <span>Next Schedule</span>
-                  <Clock className="h-4 w-4 text-sky-400" aria-hidden="true" />
-                </div>
-                <div className="mt-2 truncate font-mono text-xl font-bold text-[var(--color-foreground)]">
-                  {profileData ? profileData.nextSchedule.targetTimeWib : "—"}
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-slate-400">
-                  <span>{profileData ? `dalam ${profileData.nextSchedule.label}` : "Jadwal belum dimuat"}</span>
-                  {profileData && (
-                    <span className="rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[10px] text-slate-300">
-                      {profileData.mode}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Repository Guard Coverage */}
-              <div className="rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-card)] p-4">
-                <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wider text-[var(--color-muted-foreground)]">
-                  <span>Repo Guard</span>
-                  <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="font-mono text-xl font-bold text-[var(--color-foreground)]">
-                    {repoStats.allowedCount}
-                  </span>
-                  <span className="text-xs font-medium text-slate-400">allowed</span>
-                </div>
-                <p className="mt-1 font-mono text-[11px] text-slate-400">
-                  {repoStats.protectedCount} protected · {repoStats.total} total
-                </p>
-              </div>
-            </section>
-
-            {/* Today's AI Suggestions */}
+            {/* Featured Daily Quests (Today's AI Suggestions) */}
             <section aria-labelledby="suggestions-heading">
-              <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 id="suggestions-heading" className="font-mono text-base font-semibold text-[var(--color-foreground)]">
-                      Today&apos;s AI Suggestions
-                    </h2>
-                    <span className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-card)] px-2 py-0.5 font-mono text-[11px] text-slate-300">
-                      {suggestions.length} opsi
-                    </span>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center border-3 border-black bg-[#FFD23F] text-black shadow-[4px_4px_0_0_#000]">
+                    <Swords className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-foreground)]">
-                    {isDone
-                      ? "Target hari ini (1x push) sudah tercapai. Kembali lagi besok untuk menjaga streak!"
-                      : "Tinjau kode, sesuaikan bila perlu, lalu approve maksimal 1 saran ke @ArdanR3 hari ini."}
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2
+                        id="suggestions-heading"
+                        className="font-display text-xl font-extrabold uppercase tracking-tight text-black"
+                      >
+                        Today&apos;s Daily Quests
+                      </h2>
+                      <span className="border-2 border-black bg-black px-2 py-0.5 font-mono text-[11px] font-bold text-[#FFD23F]">
+                        {suggestions.length} DROPS
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-black/75">
+                      {isDone
+                        ? "Target 1x commit hari ini sudah tercapai. Streak aman, kembali lagi besok!"
+                        : "Pilih 1 misi terbaik, review di Code Forge, lalu klik Approve & Push."}
+                    </p>
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   disabled={generating || isDone}
                   onClick={handleGenerate}
-                  className="inline-flex min-h-[36px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors duration-200 hover:border-slate-500 hover:bg-[var(--color-secondary)] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="nb-btn inline-flex min-h-[40px] cursor-pointer items-center gap-2 bg-white px-4 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {generating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" aria-hidden="true" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
                   <span>Regenerate</span>
                 </button>
               </div>
 
               {suggestions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-card)]/70 px-6 py-12 text-center">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-                    <Sparkles className="h-6 w-6" aria-hidden="true" />
+                <div className="nb-card flex flex-col items-center justify-center bg-[#FFF3C4] px-6 py-12 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center border-3 border-black bg-[#FFD23F] text-black shadow-[4px_4px_0_0_#000]">
+                    <Sparkles className="h-7 w-7" aria-hidden="true" />
                   </div>
-                  <p className="font-mono text-sm font-semibold text-[var(--color-foreground)]">
+                  <p className="font-display text-lg font-extrabold uppercase text-black">
                     Belum ada saran AI untuk hari ini
                   </p>
-                  <p className="mt-1.5 max-w-md text-xs leading-relaxed text-[var(--color-muted-foreground)]">
-                    Sinkronisasi repository terlebih dahulu agar AI mengenal codebase kamu, lalu buat saran commit
-                    harian siap review.
+                  <p className="mt-1.5 max-w-md text-xs font-semibold leading-relaxed text-black/80">
+                    Tekan Sync Repos agar AI mengenali repository aktifmu, lalu Generate Suggestions untuk
+                    memunculkan kartu misi harian.
                   </p>
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                     <button
                       type="button"
                       onClick={handleSync}
                       disabled={syncing}
-                      className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors duration-200 hover:bg-[var(--color-secondary)] disabled:opacity-50"
+                      className="nb-btn inline-flex min-h-[42px] cursor-pointer items-center gap-2 bg-white px-5 py-2 text-xs font-extrabold uppercase text-black disabled:opacity-50"
                     >
-                      {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                       Sync Repos
                     </button>
                     <button
                       type="button"
                       onClick={handleGenerate}
                       disabled={generating || isDone}
-                      className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-slate-950 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="nb-btn inline-flex min-h-[42px] cursor-pointer items-center gap-2 bg-[#88D498] px-5 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                       Generate Suggestions
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2">
                   {suggestions.map((item) => (
                     <SuggestionCard
                       key={item.id}
@@ -460,7 +421,7 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* Guard Panel & Activity Log */}
+            {/* Repository Guard & Quest Activity Log */}
             <div className="grid gap-6 lg:grid-cols-2">
               <RepoGuardPanel repos={repos} onToggleGuard={handleToggleGuard} />
               <ActivityTimeline logs={logs} />

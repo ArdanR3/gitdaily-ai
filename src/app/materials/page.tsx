@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 
 interface StudyMaterialItem {
@@ -180,66 +181,92 @@ export default function MaterialsPage() {
     }
   }
 
+  const activeCount = materials.filter((m) => m.isActive).length;
+
   return (
-    <div className="min-h-screen bg-[#0d1117]">
-      <header className="border-b border-[#30363d] bg-[#161b22]">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
+    <div className="nb-grid-bg min-h-screen">
+      {/* Bold Neubrutalist Lavender Header */}
+      <header className="border-b-4 border-black bg-[#B8A9FA] text-black">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#21262d] px-2.5 py-1.5 text-xs font-medium text-[#c9d1d9] hover:border-[#8b949e]"
+              className="nb-btn-sm inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 bg-white px-4 py-1.5 text-xs font-extrabold uppercase text-black"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Dashboard
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Dashboard</span>
             </Link>
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-[#a371f7]" />
-              <h1 className="text-base font-semibold text-[#f0f6fc]">Study Materials · Knowledge Base</h1>
+
+            <span className="inline-flex items-center gap-1.5 border-2 border-black bg-[#FFD23F] px-3 py-1 font-mono text-[11px] font-extrabold text-black shadow-[3px_3px_0_0_#000]">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              {activeCount} ACTIVE CODEX
+            </span>
+          </div>
+
+          <div className="mt-5 flex items-center gap-3.5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center border-3 border-black bg-[#FFD23F] text-black shadow-[4px_4px_0_0_#000]">
+              <BookOpen className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-extrabold uppercase tracking-tight text-black sm:text-3xl">
+                Study Materials · Codex
+              </h1>
+              <p className="mt-0.5 text-xs font-semibold text-black/80 sm:text-sm">
+                Upload PDF, Markdown, atau kode sumber untuk memberi bahan belajar AI di Stage 02.
+              </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6">
         {alert && (
           <div
-            className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-medium ${
-              alert.type === "success"
-                ? "border-[#238636]/50 bg-[#238636]/15 text-[#3fb950]"
-                : "border-[#f85149]/50 bg-[#f85149]/15 text-[#ff7b72]"
+            role="status"
+            className={`flex items-center gap-2.5 border-3 border-black px-4 py-3 text-xs font-extrabold text-black shadow-[5px_5px_0_0_#000] ${
+              alert.type === "success" ? "bg-[#88D498]" : "bg-[#FF6B6B]"
             }`}
           >
-            {alert.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            {alert.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            )}
             <span>{alert.text}</span>
           </div>
         )}
 
-        {/* Upload Form */}
-        <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-          <h2 className="text-sm font-semibold text-[#f0f6fc]">Tambah Materi Belajar (PDF / Kode / Catatan)</h2>
-          <p className="mt-0.5 text-xs text-[#8b949e]">
+        {/* Upload Form Card */}
+        <section className="nb-card p-5 sm:p-6">
+          <h2 className="font-display text-base font-extrabold uppercase text-black">
+            Tambah Materi Belajar (PDF / Kode / Catatan)
+          </h2>
+          <p className="mt-1 text-xs font-medium text-black/75">
             Teks PDF diekstrak langsung di browser, dipecah per ~3.000 karakter, lalu disuntikkan ke AI setiap hari.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <div className="grid gap-3.5 sm:grid-cols-3">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-[#c9d1d9]">Judul Materi</label>
+                <label htmlFor="mat-title" className="mb-1.5 block text-xs font-extrabold uppercase text-black">
+                  Judul Materi
+                </label>
                 <input
+                  id="mat-title"
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Mis. Modul Struktur Data / Unity Design Patterns"
-                  className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2 text-xs text-[#f0f6fc] placeholder-[#6e7681] outline-none focus:border-[#58a6ff]"
+                  className="nb-input w-full px-3.5 py-2.5 text-xs font-bold placeholder-black/45"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-[#c9d1d9]">Upload File</label>
-                <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-[#30363d] bg-[#0d1117] px-3 py-2 text-xs text-[#58a6ff] transition hover:border-[#58a6ff]">
-                  {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
-                  {extracting ? "Membaca..." : "Pilih PDF / TXT / Kode"}
+                <span className="mb-1.5 block text-xs font-extrabold uppercase text-black">Upload File</span>
+                <label className="nb-btn-sm flex min-h-[42px] cursor-pointer items-center justify-center gap-2 bg-[#FFD23F] px-3 py-2 text-xs font-extrabold uppercase text-black">
+                  {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+                  <span>{extracting ? "Membaca..." : "Pilih PDF / TXT"}</span>
                   <input
                     type="file"
                     accept=".pdf,.md,.txt,.ts,.tsx,.js,.py,.cs,.cpp,.c,.java"
@@ -251,19 +278,22 @@ export default function MaterialsPage() {
             </div>
 
             <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label className="text-xs text-[#c9d1d9]">Isi Materi ({content.length.toLocaleString("id-ID")} karakter)</label>
-                <span className="rounded bg-[#21262d] px-1.5 py-0.5 font-mono text-[10px] text-[#8b949e]">
+              <div className="mb-1.5 flex items-center justify-between">
+                <label htmlFor="mat-content" className="text-xs font-extrabold uppercase text-black">
+                  Isi Materi ({content.length.toLocaleString("id-ID")} karakter)
+                </label>
+                <span className="border-2 border-black bg-black px-2 py-0.5 font-mono text-[10px] font-bold text-[#FFD23F]">
                   TYPE: {sourceType}
                 </span>
               </div>
               <textarea
+                id="mat-content"
                 required
                 rows={7}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Upload file PDF/kode di atas atau paste langsung catatan materi di sini..."
-                className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] p-3 font-mono text-xs text-[#e6edf3] placeholder-[#6e7681] outline-none focus:border-[#58a6ff]"
+                className="nb-input w-full p-3.5 font-mono text-xs font-medium placeholder-black/45"
               />
             </div>
 
@@ -271,84 +301,107 @@ export default function MaterialsPage() {
               <button
                 type="submit"
                 disabled={saving || extracting || !title.trim() || !content.trim()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#238636] px-4 py-2 text-xs font-medium text-white transition hover:bg-[#2ea043] disabled:opacity-50"
+                className="nb-btn inline-flex min-h-[44px] cursor-pointer items-center gap-2 bg-[#88D498] px-5 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                {saving ? "Menyimpan..." : "Simpan ke Knowledge Base"}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+                <span>{saving ? "Menyimpan..." : "Simpan ke Knowledge Base"}</span>
               </button>
             </div>
           </form>
         </section>
 
         {/* Saved Materials List */}
-        <section className="rounded-xl border border-[#30363d] bg-[#161b22] p-5">
-          <h2 className="text-sm font-semibold text-[#f0f6fc]">Daftar Materi Tersimpan</h2>
-          <p className="mt-0.5 text-xs text-[#8b949e]">
-            Setiap kali Generate Suggestions dijalankan, materi berstatus Active akan maju 1 chunk secara otomatis.
-          </p>
+        <section className="nb-card p-5 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b-3 border-black pb-3.5">
+            <div>
+              <h2 className="font-display text-base font-extrabold uppercase text-black">
+                Daftar Materi Tersimpan
+              </h2>
+              <p className="mt-0.5 text-xs font-medium text-black/75">
+                Setiap kali Generate Suggestions dijalankan, materi Active maju 1 chunk otomatis.
+              </p>
+            </div>
+            <span className="border-2 border-black bg-[#FFD23F] px-2.5 py-1 font-mono text-xs font-extrabold text-black">
+              {materials.length} MATERI
+            </span>
+          </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-10 text-xs text-[#8b949e]">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#58a6ff]" />
+            <div className="flex items-center justify-center py-12 text-xs font-bold text-black">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Memuat materi...
             </div>
           ) : materials.length === 0 ? (
-            <div className="mt-4 rounded-lg border border-dashed border-[#30363d] py-8 text-center text-xs text-[#8b949e]">
+            <div className="mt-4 border-2 border-dashed border-black bg-[#F5F0E8] py-10 text-center text-xs font-bold text-black/75">
               Belum ada materi. Upload PDF atau catatan pertamamu di atas!
             </div>
           ) : (
-            <div className="mt-4 divide-y divide-[#21262d] rounded-lg border border-[#30363d] bg-[#0d1117]">
-              {materials.map((m) => (
-                <div key={m.id} className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-xs font-semibold text-[#f0f6fc]">{m.title}</span>
-                      <span className="rounded bg-[#21262d] px-1.5 py-0.5 font-mono text-[10px] text-[#8b949e]">
-                        {m.sourceType}
-                      </span>
-                      <span className="rounded bg-[#1f6feb]/15 px-1.5 py-0.5 font-mono text-[10px] text-[#79c0ff]">
-                        Chunk {(m.currentChunkIndex % m.totalChunks) + 1} / {m.totalChunks}
-                      </span>
+            <div className="mt-4 space-y-3">
+              {materials.map((m) => {
+                const currentChunk = (m.currentChunkIndex % Math.max(m.totalChunks, 1)) + 1;
+                const progressPct = Math.round((currentChunk / Math.max(m.totalChunks, 1)) * 100);
+
+                return (
+                  <div
+                    key={m.id}
+                    className="flex flex-col gap-3 border-2 border-black bg-[#FFFDF5] p-4 shadow-[4px_4px_0_0_#000] sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="truncate text-sm font-extrabold text-black">{m.title}</span>
+                        <span className="border border-black bg-[#B8A9FA] px-2 py-0.5 font-mono text-[10px] font-extrabold text-black">
+                          {m.sourceType}
+                        </span>
+                        <span className="border border-black bg-[#74B9FF] px-2 py-0.5 font-mono text-[10px] font-extrabold text-black">
+                          Chunk {currentChunk} / {m.totalChunks}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="h-3 max-w-[200px] flex-1 overflow-hidden border-2 border-black bg-white">
+                          <div className="h-full bg-[#88D498]" style={{ width: `${progressPct}%` }} />
+                        </div>
+                        <span className="font-mono text-[11px] font-bold text-black/75">
+                          {m.charCount.toLocaleString("id-ID")} karakter
+                        </span>
+                      </div>
                     </div>
-                    <p className="mt-1 text-[11px] text-[#8b949e]">
-                      {m.charCount.toLocaleString("id-ID")} karakter total
-                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleResetProgress(m)}
+                        title="Ulangi dari Chunk 1"
+                        aria-label={`Reset progress ${m.title}`}
+                        className="nb-btn-sm cursor-pointer bg-white p-2 text-black"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(m)}
+                        className={`nb-btn-sm inline-flex min-h-[34px] cursor-pointer items-center gap-1.5 px-3 py-1 font-mono text-[11px] font-extrabold uppercase text-black ${
+                          m.isActive ? "bg-[#88D498]" : "bg-[#F5F0E8]"
+                        }`}
+                      >
+                        <Power className="h-3 w-3" aria-hidden="true" />
+                        <span>{m.isActive ? "Active" : "Paused"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(m.id)}
+                        title="Hapus materi"
+                        aria-label={`Hapus materi ${m.title}`}
+                        className="nb-btn-sm cursor-pointer bg-[#FF6B6B] p-2 text-black"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleResetProgress(m)}
-                      title="Ulangi dari Chunk 1"
-                      className="rounded-lg border border-[#30363d] bg-[#161b22] p-1.5 text-[#8b949e] hover:border-[#8b949e] hover:text-[#f0f6fc]"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleToggleActive(m)}
-                      className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition ${
-                        m.isActive
-                          ? "border-[#238636]/40 bg-[#238636]/15 text-[#3fb950]"
-                          : "border-[#30363d] bg-[#161b22] text-[#8b949e]"
-                      }`}
-                    >
-                      <Power className="h-3 w-3" />
-                      {m.isActive ? "Active" : "Paused"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(m.id)}
-                      title="Hapus materi"
-                      className="rounded-lg border border-[#30363d] bg-[#161b22] p-1.5 text-[#8b949e] hover:border-[#f85149]/50 hover:text-[#ff7b72]"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

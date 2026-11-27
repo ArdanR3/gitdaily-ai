@@ -1,24 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Fira_Code, Fira_Sans } from "next/font/google";
+import { Syne, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const firaCode = Fira_Code({
+const syne = Syne({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-fira-code",
+  variable: "--font-syne",
   display: "swap",
 });
 
-const firaSans = Fira_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-fira-sans",
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "GitDaily AI · ArdanR3",
-  description: "Developer automation dashboard untuk aktivitas harian GitHub akun ArdanR3.",
+  title: "GitDaily AI · Neubrutalist Quest Hub",
+  description: "Otomasi aktivitas harian GitHub akun @ArdanR3 bergaya Neubrutalism.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -29,13 +33,13 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "GitDaily AI",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: "#FFD23F",
   width: "device-width",
   initialScale: 1,
 };
@@ -46,8 +50,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`dark ${firaCode.variable} ${firaSans.variable}`}>
-      <body className="min-h-screen bg-[var(--color-background)] font-sans text-[var(--color-foreground)] antialiased selection:bg-emerald-500/30 selection:text-emerald-100">
+    <html lang="id" className={`${syne.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen bg-[#FFFDF5] font-sans text-black antialiased selection:bg-[#FFD23F] selection:text-black">
         {children}
       </body>
     </html>

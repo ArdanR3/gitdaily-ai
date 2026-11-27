@@ -93,21 +93,21 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
       onClick={(e) => {
         if (e.target === e.currentTarget && !saving) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]/80 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-6"
     >
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-2xl">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-4 py-3.5 sm:px-5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-400">
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden border-4 border-black bg-[#FFFDF5] shadow-[10px_10px_0_0_#000]">
+        {/* Bold Yellow Top Bar */}
+        <div className="flex items-center justify-between border-b-3 border-black bg-[#FFD23F] px-4 py-3.5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-black bg-black text-[#FFD23F]">
               <Code2 className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h3 id="code-preview-title" className="truncate font-mono text-sm font-semibold text-slate-100">
-                Preview & Edit — <span className="text-emerald-400">{suggestion.targetRepo}</span>
+              <h3 id="code-preview-title" className="truncate font-mono text-sm font-extrabold uppercase text-black">
+                CODE FORGE — {suggestion.targetRepo}
               </h3>
-              <p className="text-xs text-[var(--color-muted-foreground)]">
-                Review commit message dan isi file sebelum di-push ke GitHub. Tekan Esc untuk menutup.
+              <p className="text-xs font-bold text-black/80">
+                Edit commit message atau file sebelum push ke GitHub (Esc untuk tutup).
               </p>
             </div>
           </div>
@@ -116,16 +116,19 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
             type="button"
             aria-label="Tutup modal preview kode"
             onClick={onClose}
-            className="ml-2 cursor-pointer rounded-lg p-2 text-slate-400 transition-colors duration-150 hover:bg-[var(--color-muted)] hover:text-white"
+            className="nb-btn-sm ml-2 cursor-pointer bg-[#FF6B6B] p-2 text-black"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Metadata Inputs */}
-        <div className="grid gap-3 border-b border-[var(--color-border-subtle)] bg-[#0A0E1C] px-4 py-3.5 sm:grid-cols-2 sm:px-5">
+        <div className="grid gap-3 border-b-3 border-black bg-[#F5F0E8] px-4 py-3.5 sm:grid-cols-2 sm:px-5">
           <div>
-            <label htmlFor="preview-commit-msg" className="mb-1 block text-[11px] font-medium text-slate-300">
+            <label
+              htmlFor="preview-commit-msg"
+              className="mb-1 block text-[11px] font-extrabold uppercase text-black"
+            >
               Commit Message
             </label>
             <input
@@ -133,13 +136,16 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-3 py-2 font-mono text-xs text-slate-100 transition-colors focus:border-emerald-500"
+              className="nb-input w-full px-3 py-2 font-mono text-xs font-bold"
             />
           </div>
 
           {suggestion.type === "CREATE_REPO" && (
             <div>
-              <label htmlFor="preview-repo-name" className="mb-1 block text-[11px] font-medium text-slate-300">
+              <label
+                htmlFor="preview-repo-name"
+                className="mb-1 block text-[11px] font-extrabold uppercase text-black"
+              >
                 Nama Repository Baru
               </label>
               <input
@@ -147,14 +153,17 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
                 type="text"
                 value={targetRepo}
                 onChange={(e) => setTargetRepo(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-3 py-2 font-mono text-xs text-slate-100 transition-colors focus:border-emerald-500"
+                className="nb-input w-full px-3 py-2 font-mono text-xs font-bold"
               />
             </div>
           )}
 
           {suggestion.type === "CREATE_REPO" && (
             <div className="sm:col-span-2">
-              <label htmlFor="preview-repo-desc" className="mb-1 block text-[11px] font-medium text-slate-300">
+              <label
+                htmlFor="preview-repo-desc"
+                className="mb-1 block text-[11px] font-extrabold uppercase text-black"
+              >
                 Deskripsi Repository
               </label>
               <input
@@ -162,7 +171,7 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-background)] px-3 py-2 text-xs text-slate-100 transition-colors focus:border-emerald-500"
+                className="nb-input w-full px-3 py-2 text-xs font-bold"
               />
             </div>
           )}
@@ -173,7 +182,7 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
           <div
             role="tablist"
             aria-label="Daftar file kode"
-            className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--color-border-subtle)] bg-[var(--color-background)] p-2.5 sm:w-60 sm:flex-col sm:overflow-y-auto sm:border-b-0 sm:border-r"
+            className="flex shrink-0 gap-1.5 overflow-x-auto border-b-3 border-black bg-[#FFFDF5] p-2.5 sm:w-64 sm:flex-col sm:overflow-y-auto sm:border-b-0 sm:border-r-3"
           >
             {files.map((file, idx) => (
               <button
@@ -182,10 +191,10 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
                 role="tab"
                 aria-selected={idx === activeIndex}
                 onClick={() => setActiveIndex(idx)}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left font-mono text-xs transition-colors duration-150 ${
+                className={`flex cursor-pointer items-center gap-2 border-2 border-black px-3 py-2 text-left font-mono text-xs font-bold transition ${
                   idx === activeIndex
-                    ? "border border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
-                    : "border border-transparent text-slate-400 hover:bg-[var(--color-card)] hover:text-slate-200"
+                    ? "bg-black text-[#FFD23F]"
+                    : "bg-white text-black hover:bg-[#FFF3C4]"
                 }`}
               >
                 <FileCode2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -194,39 +203,37 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
             ))}
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col bg-[var(--color-background)]">
+          <div className="flex min-h-0 flex-1 flex-col bg-[#14131A]">
             {activeFile ? (
               <>
-                <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] bg-[#0A0E1C] px-4 py-1.5 font-mono text-[11px] text-slate-400">
+                <div className="flex items-center justify-between border-b-2 border-black bg-black px-4 py-1.5 font-mono text-[11px] font-bold text-[#FFD23F]">
                   <span className="truncate">{activeFile.path}</span>
-                  <span className="shrink-0">{lineCount} baris</span>
+                  <span className="shrink-0 text-[#88D498]">{lineCount} baris</span>
                 </div>
                 <textarea
                   aria-label={`Editor konten ${activeFile.path}`}
                   value={activeFile.content}
                   onChange={(e) => updateActiveContent(e.target.value)}
                   spellCheck={false}
-                  className="h-80 w-full flex-1 resize-none bg-[var(--color-background)] p-4 font-mono text-xs leading-relaxed text-slate-100 focus:outline-none sm:h-[420px]"
+                  className="h-80 w-full flex-1 resize-none bg-[#14131A] p-4 font-mono text-xs leading-relaxed text-[#FFFDF5] focus:outline-none sm:h-[420px]"
                 />
               </>
             ) : (
-              <div className="p-6 text-xs text-[var(--color-muted-foreground)]">
-                Tidak ada file untuk ditampilkan.
-              </div>
+              <div className="p-6 text-xs font-bold text-white">Tidak ada file untuk ditampilkan.</div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border-subtle)] bg-[var(--color-card)] px-4 py-3.5 sm:px-5">
-          <div role="alert" className="text-xs font-medium text-red-300">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t-3 border-black bg-[#F5F0E8] px-4 py-3.5 sm:px-5">
+          <div role="alert" className="text-xs font-extrabold text-[#DC2626]">
             {error}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[38px] cursor-pointer rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)] px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors duration-200 hover:bg-[var(--color-secondary)]"
+              className="nb-btn min-h-[40px] cursor-pointer bg-white px-4 py-2 text-xs font-extrabold uppercase text-black"
             >
               Batal
             </button>
@@ -234,7 +241,7 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex min-h-[38px] cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-slate-950 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="nb-btn inline-flex min-h-[40px] cursor-pointer items-center gap-1.5 bg-[#88D498] px-4 py-2 text-xs font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
