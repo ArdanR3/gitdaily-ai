@@ -49,7 +49,6 @@ function LoginForm() {
   return (
     <div className="nb-grid-bg flex min-h-screen items-center justify-center px-4 py-8">
       <div className="w-full max-w-md border-4 border-black bg-white shadow-[10px_10px_0_0_#000]">
-        {/* Bold Yellow Neubrutalist Header */}
         <div className="border-b-4 border-black bg-[#FFD23F] px-6 py-7 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center border-3 border-black bg-black text-[#FFD23F] shadow-[4px_4px_0_0_#FFF]">
             <Terminal className="h-7 w-7" aria-hidden="true" />
@@ -62,7 +61,6 @@ function LoginForm() {
           </span>
         </div>
 
-        {/* Auth Form */}
         <form onSubmit={handleSubmit} className="space-y-4 p-6">
           <div>
             <label htmlFor="password" className="mb-1.5 block text-xs font-extrabold uppercase text-black">

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { safeApiError } from "@/lib/apiError";
 
 export async function PATCH(request: Request) {
   try {
@@ -42,7 +43,6 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ ok: true, repository: updated });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memperbarui status proteksi repo.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memperbarui status proteksi repo.", 500);
   }
 }

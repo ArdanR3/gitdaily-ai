@@ -142,7 +142,6 @@ export function CodePreviewModal({ suggestion, onClose, onSaved }: CodePreviewMo
         transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         className="flex max-h-[90dvh] w-full max-w-5xl flex-col overflow-hidden border-4 border-black bg-[#FFFDF5] shadow-[10px_10px_0_0_#000] overscroll-contain"
       >
-        {/* Bold Yellow Top Bar */}
         <div className="flex items-center justify-between border-b-3 border-black bg-[#FFD23F] px-4 py-3.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-black bg-black text-[#FFD23F]">

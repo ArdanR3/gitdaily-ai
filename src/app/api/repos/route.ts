@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { safeApiError } from "@/lib/apiError";
 
 export async function GET() {
   try {
@@ -8,7 +9,6 @@ export async function GET() {
     });
     return NextResponse.json({ repositories });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat daftar repository.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memuat daftar repository.", 500);
   }
 }

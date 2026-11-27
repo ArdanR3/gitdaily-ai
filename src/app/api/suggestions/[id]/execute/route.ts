@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { executeSuggestionById } from "@/lib/services/executionService";
+import { safeApiError } from "@/lib/apiError";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -12,7 +13,6 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     const result = await executeSuggestionById(suggestionId, "MANUAL_APPROVAL");
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal mengeksekusi push ke GitHub.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return safeApiError(error, "Gagal mengeksekusi push ke GitHub.", 400, { exposeDomainMessage: true });
   }
 }

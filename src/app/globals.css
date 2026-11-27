@@ -6,10 +6,6 @@
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* ============================================================
-   NEUBRUTALISM.COM INSPIRED TOKENS
-   Border 3px solid #000 · Hard Offset Shadow · Zero Radius
-   ============================================================ */
 :root {
   color-scheme: light;
   --nb-ink: #000000;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hasExecutedToday } from "@/lib/dailyGuard";
 import { getTodayWibKey } from "@/lib/time";
+import { safeApiError } from "@/lib/apiError";
 
 export async function GET() {
   try {
@@ -20,7 +21,6 @@ export async function GET() {
       suggestions,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat saran harian.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memuat saran harian.", 500);
   }
 }

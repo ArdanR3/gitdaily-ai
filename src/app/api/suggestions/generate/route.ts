@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateDailySuggestions } from "@/lib/services/aiSuggestionService";
 import { getTodayWibKey } from "@/lib/time";
+import { safeApiError } from "@/lib/apiError";
 
 export async function POST() {
   try {
@@ -12,7 +13,6 @@ export async function POST() {
       suggestions,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal menghasilkan saran AI.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal menghasilkan saran AI.", 500, { exposeDomainMessage: true });
   }
 }

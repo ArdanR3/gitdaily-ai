@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { safeApiError } from "@/lib/apiError";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -31,8 +32,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
 
     return NextResponse.json({ ok: true, material: updated });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memperbarui materi.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return safeApiError(error, "Gagal memperbarui materi.", 400);
   }
 }
 
@@ -47,7 +47,6 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
     await prisma.studyMaterial.delete({ where: { id: materialId } });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal menghapus materi.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return safeApiError(error, "Gagal menghapus materi.", 400);
   }
 }

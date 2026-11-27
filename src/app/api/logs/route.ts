@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { safeApiError } from "@/lib/apiError";
 
 export async function GET() {
   try {
@@ -9,7 +10,6 @@ export async function GET() {
     });
     return NextResponse.json({ logs });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat activity log.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memuat activity log.", 500);
   }
 }

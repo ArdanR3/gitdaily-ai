@@ -1,13 +1,22 @@
 export const SESSION_COOKIE_NAME = "gitdaily_session";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function constantTimeEqual(a: string, b: string): boolean {
+function constantTimeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    diff |= a[i] ^ b[i];
   }
   return diff === 0;
+}
+
+async function constantTimeEqualSecret(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [hashA, hashB] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  return constantTimeEqualBytes(new Uint8Array(hashA), new Uint8Array(hashB));
 }
 
 async function hmacHex(message: string, secret: string): Promise<string> {
@@ -53,17 +62,17 @@ export async function verifySessionToken(token: string | undefined): Promise<boo
   }
 
   const expectedSig = await hmacHex(`gitdaily-auth:${expStr}.${nonce}`, getSigningSecret(password));
-  return constantTimeEqual(sig, expectedSig);
+  return constantTimeEqualSecret(sig, expectedSig);
 }
 
-export function verifyDashboardPassword(candidate: string | undefined): boolean {
+export async function verifyDashboardPassword(candidate: string | undefined): Promise<boolean> {
   const expected = process.env.DASHBOARD_PASSWORD?.trim();
   if (!expected || !candidate) return false;
-  return constantTimeEqual(candidate, expected);
+  return constantTimeEqualSecret(candidate, expected);
 }
 
-export function verifyCronAuthorization(authHeader: string | null): boolean {
+export async function verifyCronAuthorization(authHeader: string | null): Promise<boolean> {
   const secret = process.env.CRON_SECRET?.trim();
   if (!secret || !authHeader || !authHeader.startsWith("Bearer ")) return false;
-  return constantTimeEqual(authHeader.slice(7).trim(), secret);
+  return constantTimeEqualSecret(authHeader.slice(7).trim(), secret);
 }

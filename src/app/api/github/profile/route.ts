@@ -3,6 +3,9 @@ import { fetchGitHubProfile } from "@/lib/services/githubService";
 import { prisma } from "@/lib/prisma";
 import { hasExecutedToday } from "@/lib/dailyGuard";
 import { getNextScheduleInfo, getTodayWibKey } from "@/lib/time";
+import { getGitHubUsername } from "@/lib/env";
+import { safeApiError } from "@/lib/apiError";
+import type { GitHubProfileSummary } from "@/types";
 
 function calculateStreak(dateKeys: string[]): number {
   const uniqueDates = new Set(dateKeys);
@@ -26,9 +29,6 @@ function calculateStreak(dateKeys: string[]): number {
 
   return streak;
 }
-
-import { getGitHubUsername } from "@/lib/env";
-import type { GitHubProfileSummary } from "@/types";
 
 export async function GET() {
   try {
@@ -80,7 +80,6 @@ export async function GET() {
       nextSchedule,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat profil GitHub.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memuat profil GitHub.", 500);
   }
 }

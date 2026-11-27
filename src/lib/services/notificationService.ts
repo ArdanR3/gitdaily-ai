@@ -2,7 +2,11 @@ import { getAppUrl, getGitHubUsername } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import type { NotificationChannel } from "@/types";
 
-async function sendTelegram(text: string): Promise<void> {
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+async function sendTelegram(htmlText: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) {
@@ -14,15 +18,16 @@ async function sendTelegram(text: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      text,
-      parse_mode: "Markdown",
+      text: htmlText,
+      parse_mode: "HTML",
       disable_web_page_preview: true,
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Telegram API error (${res.status}): ${body}`);
+    console.error(`[Telegram API ${res.status}]`, body.slice(0, 400));
+    throw new Error(`Telegram API gagal merespons (HTTP ${res.status}).`);
   }
 }
 
@@ -40,24 +45,28 @@ async function sendDiscord(content: string): Promise<void> {
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Discord Webhook error (${res.status}): ${body}`);
+    console.error(`[Discord Webhook ${res.status}]`, body.slice(0, 400));
+    throw new Error(`Discord Webhook gagal merespons (HTTP ${res.status}).`);
   }
 }
 
 async function getActiveChannel(): Promise<NotificationChannel> {
   const settings = await prisma.appSettings.findUnique({ where: { id: 1 } });
-  const channel = (settings?.notificationChannel || "TELEGRAM") as NotificationChannel;
-  return channel;
+  return (settings?.notificationChannel || "TELEGRAM") as NotificationChannel;
 }
 
-export async function dispatchNotification(message: string, overrideChannel?: NotificationChannel): Promise<void> {
+export async function dispatchNotification(
+  telegramHtml: string,
+  discordMarkdown: string,
+  overrideChannel?: NotificationChannel
+): Promise<void> {
   const channel = overrideChannel ?? (await getActiveChannel());
   if (channel === "NONE") return;
 
   if (channel === "TELEGRAM") {
-    await sendTelegram(message);
+    await sendTelegram(telegramHtml);
   } else if (channel === "DISCORD") {
-    await sendDiscord(message);
+    await sendDiscord(discordMarkdown);
   }
 }
 
@@ -66,20 +75,32 @@ export async function sendDailySuggestionsNotification(
 ): Promise<void> {
   const username = getGitHubUsername();
   const appUrl = getAppUrl();
-  const lines = suggestions.map(
-    (s, idx) =>
-      `${idx + 1}. *${s.type === "CREATE_REPO" ? "Repo Baru" : "Update Repo"}*: \`${s.targetRepo}\`\n   • ${s.title}\n   • _${s.reasoning}_`
-  );
 
-  const msg = [
-    `🤖 *GitDaily AI — Saran Harian untuk ${username}*`,
+  const htmlLines = suggestions.map(
+    (s, idx) =>
+      `${idx + 1}. <b>${s.type === "CREATE_REPO" ? "Repo Baru" : "Update Repo"}</b>: <code>${escapeHtml(s.targetRepo)}</code>\n   • ${escapeHtml(s.title)}\n   • <i>${escapeHtml(s.reasoning)}</i>`
+  );
+  const telegramHtml = [
+    `🤖 <b>GitDaily AI — Saran Harian untuk ${escapeHtml(username)}</b>`,
     "",
-    ...lines,
+    ...htmlLines,
+    "",
+    `👉 Review &amp; Approve di Dashboard: ${escapeHtml(appUrl)}`,
+  ].join("\n");
+
+  const mdLines = suggestions.map(
+    (s, idx) =>
+      `${idx + 1}. **${s.type === "CREATE_REPO" ? "Repo Baru" : "Update Repo"}**: \`${s.targetRepo}\`\n   • ${s.title}\n   • _${s.reasoning}_`
+  );
+  const discordMd = [
+    `🤖 **GitDaily AI — Saran Harian untuk ${username}**`,
+    "",
+    ...mdLines,
     "",
     `👉 Review & Approve di Dashboard: ${appUrl}`,
   ].join("\n");
 
-  await dispatchNotification(msg);
+  await dispatchNotification(telegramHtml, discordMd);
 }
 
 export async function sendExecutionResultNotification(params: {
@@ -93,32 +114,33 @@ export async function sendExecutionResultNotification(params: {
 }): Promise<void> {
   const username = getGitHubUsername();
   const statusIcon = params.success ? "✅" : "❌";
-  const header = params.success
-    ? `${statusIcon} *GitDaily AI — Push Berhasil (${params.triggeredBy})*`
-    : `${statusIcon} *GitDaily AI — Push Gagal (${params.triggeredBy})*`;
+  const statusLabel = params.success ? "Push Berhasil" : "Push Gagal";
 
-  const lines = [
-    header,
+  const htmlLines = [
+    `${statusIcon} <b>GitDaily AI — ${statusLabel} (${escapeHtml(params.triggeredBy)})</b>`,
+    `• Akun: <code>${escapeHtml(username)}</code>`,
+    `• Repo: <code>${escapeHtml(params.repoName)}</code> (${escapeHtml(params.actionType)})`,
+    `• Commit: <code>${escapeHtml(params.commitMessage)}</code>`,
+  ];
+  if (params.commitUrl) htmlLines.push(`• Link Commit: ${escapeHtml(params.commitUrl)}`);
+  if (params.errorMessage) htmlLines.push(`• Error: ${escapeHtml(params.errorMessage)}`);
+
+  const mdLines = [
+    `${statusIcon} **GitDaily AI — ${statusLabel} (${params.triggeredBy})**`,
     `• Akun: \`${username}\``,
     `• Repo: \`${params.repoName}\` (${params.actionType})`,
     `• Commit: \`${params.commitMessage}\``,
   ];
+  if (params.commitUrl) mdLines.push(`• Link Commit: ${params.commitUrl}`);
+  if (params.errorMessage) mdLines.push(`• Error: ${params.errorMessage}`);
 
-  if (params.commitUrl) {
-    lines.push(`• Link Commit: ${params.commitUrl}`);
-  }
-  if (params.errorMessage) {
-    lines.push(`• Error: ${params.errorMessage}`);
-  }
-
-  await dispatchNotification(lines.join("\n"));
+  await dispatchNotification(htmlLines.join("\n"), mdLines.join("\n"));
 }
 
 export async function sendTestNotification(channel?: NotificationChannel): Promise<void> {
   const username = getGitHubUsername();
   const appUrl = getAppUrl();
-  await dispatchNotification(
-    `🔔 *Test Notification — GitDaily AI*\nIntegrasi notifikasi untuk akun GitHub \`${username}\` berfungsi normal!\nDashboard: ${appUrl}`,
-    channel
-  );
+  const telegramHtml = `🔔 <b>Test Notification — GitDaily AI</b>\nIntegrasi notifikasi untuk akun GitHub <code>${escapeHtml(username)}</code> berfungsi normal!\nDashboard: ${escapeHtml(appUrl)}`;
+  const discordMd = `🔔 **Test Notification — GitDaily AI**\nIntegrasi notifikasi untuk akun GitHub \`${username}\` berfungsi normal!\nDashboard: ${appUrl}`;
+  await dispatchNotification(telegramHtml, discordMd, channel);
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyCronAuthorization } from "@/lib/auth";
+import { safeApiError } from "@/lib/apiError";
 import { prisma } from "@/lib/prisma";
 import { hasExecutedToday } from "@/lib/dailyGuard";
 import { syncRepositoriesFromGitHub } from "@/lib/services/githubService";
@@ -8,7 +9,7 @@ import { executeSuggestionById } from "@/lib/services/executionService";
 import { getTodayWibKey } from "@/lib/time";
 
 export async function POST(request: Request) {
-  if (!verifyCronAuthorization(request.headers.get("authorization"))) {
+  if (!(await verifyCronAuthorization(request.headers.get("authorization")))) {
     return NextResponse.json({ error: "Forbidden: invalid CRON_SECRET." }, { status: 401 });
   }
 
@@ -76,7 +77,6 @@ export async function POST(request: Request) {
       ...result,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Cron autopilot gagal.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Cron autopilot gagal.", 500, { exposeDomainMessage: true });
   }
 }

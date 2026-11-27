@@ -57,11 +57,22 @@ const BLOCKED_FILENAMES = new Set([
   "docker-compose.yaml",
   ".gitlab-ci.yml",
   "makefile",
+  "vercel.json",
+  "pyproject.toml",
+  "setup.py",
+  "requirements.txt",
+  ".gitmodules",
 ]);
+
+const MAX_FILES_PER_COMMIT = 5;
+const MAX_FILE_BYTES = 50 * 1024;
 
 export function validateFilesForCommit(files: GeneratedFile[]): GeneratedFile[] {
   if (!Array.isArray(files) || files.length === 0) {
     throw new Error("Daftar file untuk commit tidak boleh kosong.");
+  }
+  if (files.length > MAX_FILES_PER_COMMIT) {
+    throw new Error(`Maksimal ${MAX_FILES_PER_COMMIT} file per commit diperbolehkan.`);
   }
 
   return files.map((file) => {
@@ -75,7 +86,9 @@ export function validateFilesForCommit(files: GeneratedFile[]): GeneratedFile[] 
       segments.some((seg) => !seg || seg === "." || seg === ".." || seg.toLowerCase() === ".git") ||
       lowerPath.startsWith(".github/") ||
       lowerPath.startsWith(".husky/") ||
+      lowerPath.startsWith(".vscode/") ||
       baseName.startsWith(".env") ||
+      baseName.startsWith("next.config.") ||
       BLOCKED_FILENAMES.has(baseName)
     ) {
       throw new Error(`Path file berisiko atau tidak valid dilarang di-commit oleh AI: "${file.path}"`);
@@ -91,6 +104,10 @@ export function validateFilesForCommit(files: GeneratedFile[]): GeneratedFile[] 
 
     if (typeof file.content !== "string" || file.content.trim().length === 0) {
       throw new Error(`Konten file "${cleanPath}" kosong (junk commit ditolak).`);
+    }
+
+    if (Buffer.byteLength(file.content, "utf-8") > MAX_FILE_BYTES) {
+      throw new Error(`Ukuran file "${cleanPath}" melebihi batas maksimum 50 KB.`);
     }
 
     return { path: cleanPath, content: file.content };

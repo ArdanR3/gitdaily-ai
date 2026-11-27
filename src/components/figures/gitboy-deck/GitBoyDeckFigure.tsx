@@ -23,10 +23,7 @@ interface GitBoyDeckFigureProps {
   onSelectStage: (stage: QuestStageId) => void;
 }
 
-/* ============================================================
-   ISOMETRIC 3D -> 2D PROJECTION HELPERS
-   Standard 30-degree isometric axes centered at (260, 215)
-   ============================================================ */
+/* ISOMETRIC 3D -> 2D PROJECTION HELPERS Standard 30-degree isometric axes centered at (260, 215) */
 const COS30 = 0.8660254;
 const SIN30 = 0.5;
 const ORIGIN_X = 258;
@@ -232,9 +229,7 @@ export function GitBoyDeckFigure({
             fillOpacity="0.12"
           />
 
-          {/* =====================================================
-              LAYER 1: BACK CASING SHELL
-              ===================================================== */}
+          {/* Layer 1: back casing shell */}
           <motion.g
             animate={exploded ? { x: 46, y: 24 } : { x: 0, y: 0 }}
             transition={springCfg}
@@ -278,9 +273,7 @@ export function GitBoyDeckFigure({
             />
           </motion.g>
 
-          {/* =====================================================
-              [02] STUDY CARTRIDGE (LILAC — SLIDES OUT ON HOVER/SELECT/EXPLODE)
-              ===================================================== */}
+          {/* [02] study cartridge (lilac — slides out on hover/select/explode) */}
           <motion.g
             animate={{ x: cartShiftX, y: cartLiftY }}
             transition={springCfg}
@@ -387,9 +380,7 @@ export function GitBoyDeckFigure({
             </g>
           </motion.g>
 
-          {/* =====================================================
-              LAYER 2: INTERNAL GREEN PCB & GEMINI AI CORE CHIP
-              ===================================================== */}
+          {/* Layer 2: internal green pcb & gemini ai core chip */}
           <motion.g
             animate={
               exploded
@@ -511,9 +502,7 @@ export function GitBoyDeckFigure({
             </g>
           </motion.g>
 
-          {/* =====================================================
-              LAYER 3: FRONT NEO-BRUTALIST YELLOW CASING + LCD + CONTROLS
-              ===================================================== */}
+          {/* Layer 3: front neo-brutalist yellow casing + lcd + controls */}
           <motion.g
             animate={exploded ? { x: -52, y: -26 } : { x: 0, y: 0 }}
             transition={springCfg}
@@ -811,9 +800,7 @@ export function GitBoyDeckFigure({
             ))}
           </motion.g>
 
-          {/* =====================================================
-              ORTHOGONAL CALLOUT LEADER LINES & BADGES ([01] - [04])
-              ===================================================== */}
+          {/* Orthogonal callout leader lines & badges ([01] - [04]) */}
           {/* [01] SYNC PORT & B-BUTTON (Bottom Left) */}
           <g
             onClick={() => onSelectStage("01")}

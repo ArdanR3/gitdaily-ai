@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncRepositoriesFromGitHub } from "@/lib/services/githubService";
+import { safeApiError } from "@/lib/apiError";
 
 export async function POST() {
   try {
@@ -10,7 +11,6 @@ export async function POST() {
       repositories: repos,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal sinkronisasi repository.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal sinkronisasi repository.", 500, { exposeDomainMessage: true });
   }
 }

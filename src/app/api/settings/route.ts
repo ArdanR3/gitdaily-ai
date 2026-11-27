@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { safeApiError } from "@/lib/apiError";
 
 export async function GET() {
   try {
@@ -10,8 +11,7 @@ export async function GET() {
     });
     return NextResponse.json({ settings });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat pengaturan.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return safeApiError(error, "Gagal memuat pengaturan.", 500);
   }
 }
 
@@ -59,7 +59,6 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ ok: true, settings });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal menyimpan pengaturan.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return safeApiError(error, "Gagal menyimpan pengaturan.", 400);
   }
 }
